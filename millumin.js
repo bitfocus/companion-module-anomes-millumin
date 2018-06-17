@@ -10,9 +10,14 @@ function instance(system, id, config) {
 	return self;
 }
 
+instance.prototype.updateConfig = function(config) {
+	var self = this;
+	self.config = config;
+};
+
 instance.prototype.init = function() {
 	var self = this;
-	self.status(0); // status ok!
+	self.status(self.STATE_OK); // status OK!
 	debug = self.debug;
 	log = self.log;
 };
