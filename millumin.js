@@ -149,8 +149,6 @@ instance.prototype.action = function(action) {
 	var self = this;
 	var id = action.action;
 
-	console.log("DETTE ER MIN DEBUG", action);
-
 	var osc = {
 		'tColumn':              '/millumin/action/LaunchOrStopColumn',
 		'lColumn':              '/millumin/action/launchColumn',
