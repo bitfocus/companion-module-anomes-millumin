@@ -130,6 +130,18 @@ instance.prototype.actions = function(system) {
 			]
 		},
 
+		'selectLayer': {
+				label:'Select Layer by Index',
+				options: [
+					{
+					 type: 'textinput',
+					 label: 'Name',
+					 id: 'int',
+					 regex: self.REGEX_NUMBER
+				}
+			]
+		},
+
 		'nxtColumn':    { label: 'Next Column' },
 		'prevColumn':   { label: 'Previous Column'},
 		'stopAll':      { label: 'Stop all Columns' },
@@ -165,7 +177,8 @@ instance.prototype.action = function(action) {
 		'tPlayMedia':           '/millumin/selectedLayer/startOrPauseMedia',
 		'stopMedia':            '/millumin/selectedLayer/stopMedia',
 		'startMediaAtColumn':   '/millumin/selectedLayer/startMedia',
-		'startNamedMedia':      '/millumin/selectedLayer/startMedia'
+		'startNamedMedia':      '/millumin/selectedLayer/startMedia',
+		'selectLayer':          '/millumin/action/selectLayer'
 	};
 
 	if (id == 'tColumn')  {
@@ -222,10 +235,22 @@ instance.prototype.action = function(action) {
 		self.system.emit('osc_send', self.config.host, self.config.port, osc[id], [arg]);
 	}
 
+	else if (id == 'selectLayer')  {
+		var arg = {
+			type: "i",
+			value: parseInt(action.options.int)
+		};
+		self.system.emit('osc_send', self.config.host, self.config.port, osc[id], [arg]);
+		debug('sending ',osc[id],arg,"to",self.config.host);
+	}
+
+
+
 	else if (osc[id] !== undefined) {
 		debug('sending adress only',osc[id],"to",self.config.host);
 		self.system.emit('osc_send', self.config.host, self.config.port, osc[id], []);
 	}
+
 
 
 };
