@@ -251,14 +251,6 @@ instance.prototype.action = function(action) {
 		self.system.emit('osc_send', self.config.host, self.config.port, osc[id], []);
 	}
 
-
-
-};
-
-instance.module_info = {
-	label: 'Millumin OSC',
-	id: 'millumin',
-	version: '0.0.2'
 };
 
 instance_skel.extendedBy(instance);
