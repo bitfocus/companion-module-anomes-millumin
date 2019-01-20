@@ -1,16 +1,19 @@
 {
-  "name": "millumin",
-  "version": "1.0.0",
+	"name": "millumin",
+	"version": "1.0.1",
 	"api_version": "1.0.0",
-	"keywords": [ "Software", "Video" ],
+	"keywords": [
+		"Software",
+		"Video"
+	],
 	"manufacturer": "Anomes",
 	"product": "Millumin 2",
 	"shortname": "millumin",
-  "description": "Millumin plugin for Companion",
-  "main": "millumin.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "author": "Per Røine <per.roine@gmail.com>",
-  "license": "ISC"
+	"description": "Millumin plugin for Companion",
+	"main": "millumin.js",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"author": "Per Røine <per.roine@gmail.com>",
+	"license": "MIT"
 }
