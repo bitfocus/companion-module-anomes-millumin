@@ -142,6 +142,19 @@ instance.prototype.actions = function(system) {
 			]
 		},
 
+		'cBoard': {
+			label:'Change Board (number)',
+			options: [
+				{
+					 type: 'textinput',
+					 label: 'board number',
+					 id: 'int',
+					 default: 1,
+					 regex: self.REGEX_NUMBER
+				}
+			]
+		},
+
 		'nxtColumn':    { label: 'Next Column' },
 		'prevColumn':   { label: 'Previous Column'},
 		'stopAll':      { label: 'Stop all Columns' },
@@ -178,7 +191,8 @@ instance.prototype.action = function(action) {
 		'stopMedia':            '/millumin/selectedLayer/stopMedia',
 		'startMediaAtColumn':   '/millumin/selectedLayer/startMedia',
 		'startNamedMedia':      '/millumin/selectedLayer/startMedia',
-		'selectLayer':          '/millumin/action/selectLayer'
+		'selectLayer':          '/millumin/action/selectLayer',
+		'cBoard':               '/millumin/action/selectBoard'
 	};
 
 	if (id == 'tColumn')  {
@@ -244,7 +258,14 @@ instance.prototype.action = function(action) {
 		debug('sending ',osc[id],arg,"to",self.config.host);
 	}
 
-
+	else if (id == 'cBoard')  {
+		debug('sending ',osc[id],"to",self.config.host);
+		var arg = {
+			type: "i",
+			value: parseInt(action.options.int)
+		};
+		self.system.emit('osc_send', self.config.host, self.config.port, osc[id], [arg]);
+	}
 
 	else if (osc[id] !== undefined) {
 		debug('sending adress only',osc[id],"to",self.config.host);
