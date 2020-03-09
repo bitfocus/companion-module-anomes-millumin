@@ -2,51 +2,6 @@ exports.getActions = function(arg) {
 
 	var actions = {}
 
-	actions['playMediaInColumn'] = {
-		label: 'Play media from layer on column',
-		options: [
-			{
-				type: 'textinput',
-				label: 'Layer index',
-				id: 'layer',
-				default: 1,
-				regex: arg.REGEX_NUMBER
-			},
-			{
-				type: 'textinput',
-				label: 'Column',
-				id: 'int',
-				default: 1,
-				regex: arg.REGEX_NUMBER
-			}]
-	}
-
-	actions['playMediaInNextColumn'] = {
-		label: 'Next Column',
-		options: [
-			{
-				type: 'textinput',
-				label: 'Layer index',
-				id: 'layer',
-				default: 1,
-				regex: arg.REGEX_NUMBER
-			}
-		]
-	}
-
-	actions['playMediaInPreviousColumn'] = {
-		label: 'Previous Column',
-		options: [
-			{
-				type: 'textinput',
-				label: 'Layer index',
-				id: 'layer',
-				default: 1,
-				regex: arg.REGEX_NUMBER
-			}
-		]
-	}
-
 	actions['tColumn'] = {
 		label: 'Toggle Column (number)',
 		options: [{
@@ -169,6 +124,50 @@ exports.getActions = function(arg) {
 	actions['tPlayMedia'] =   { label: 'Toggle Play Media'}
 	actions['stopMedia'] =   { label: 'Stop Media'}
 
+	actions['playMediaInColumn'] = {
+		label: 'Play media from layer on column',
+		options: [
+			{
+				type: 'textinput',
+				label: 'Layer index',
+				id: 'layer',
+				default: 1,
+				regex: arg.REGEX_NUMBER
+			},
+			{
+				type: 'textinput',
+				label: 'Column',
+				id: 'int',
+				default: 1,
+				regex: arg.REGEX_NUMBER
+			}]
+	}
+
+	actions['playMediaInNextColumn'] = {
+		label: 'Next Column with layer',
+		options: [
+			{
+				type: 'textinput',
+				label: 'Layer index',
+				id: 'layer',
+				default: 1,
+				regex: arg.REGEX_NUMBER
+			}
+		]
+	}
+
+	actions['playMediaInPreviousColumn'] = {
+		label: 'Previous Column with layer',
+		options: [
+			{
+				type: 'textinput',
+				label: 'Layer index',
+				id: 'layer',
+				default: 1,
+				regex: arg.REGEX_NUMBER
+			}
+		]
+	}
 
 	return actions
 }
