@@ -261,8 +261,8 @@ class instance extends instance_skel {
 		else if (id == 'playMediaInColumn') {
 			debug('sending ',`/millumin/${action.options.layer}/startMedia`,"to",this.config.host);
 			let argL = {
-				type: "i",
-				value: parseInt(action.options.layer)
+				type: "s",
+				value: "" + action.options.layer
 			};
 			arg = {
 				type: "i",
@@ -277,8 +277,8 @@ class instance extends instance_skel {
 
 		else if (id == 'playMediaInNextColumn') {
 			let argL = {
-				type: "i",
-				value: parseInt(action.options.layer)
+				type: "s",
+				value: "" + action.options.layer
 			};
 			// on first time set value
 			currentColumn !== undefined ? currentColumn++ : currentColumn = 1
@@ -293,8 +293,8 @@ class instance extends instance_skel {
 
 		else if (id == 'playMediaInPreviousColumn') {
 			let argL = {
-				type: "i",
-				value: parseInt(action.options.layer)
+				type: "s",
+				value: "" + action.options.layer
 			}
 			// on first time set value, and make sure no column lower then 1 is selected
 			currentColumn !== undefined || currentColumn > 1 ? currentColumn-- : currentColumn = 1

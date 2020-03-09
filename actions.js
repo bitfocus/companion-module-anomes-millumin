@@ -129,10 +129,9 @@ exports.getActions = function(arg) {
 		options: [
 			{
 				type: 'textinput',
-				label: 'Layer index',
+				label: 'Layer name',
 				id: 'layer',
-				default: 1,
-				regex: arg.REGEX_NUMBER
+				default: 'layer 1'
 			},
 			{
 				type: 'textinput',
@@ -148,10 +147,9 @@ exports.getActions = function(arg) {
 		options: [
 			{
 				type: 'textinput',
-				label: 'Layer index',
+				label: 'Layer name',
 				id: 'layer',
-				default: 1,
-				regex: arg.REGEX_NUMBER
+				default: 'layer 1'
 			}
 		]
 	}
@@ -161,10 +159,9 @@ exports.getActions = function(arg) {
 		options: [
 			{
 				type: 'textinput',
-				label: 'Layer index',
+				label: 'Layer name',
 				id: 'layer',
-				default: 1,
-				regex: arg.REGEX_NUMBER
+				default: 'layer 1'
 			}
 		]
 	}
