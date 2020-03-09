@@ -1,6 +1,6 @@
 {
 	"name": "millumin",
-	"version": "1.0.4",
+	"version": "1.0.5",
 	"api_version": "1.0.0",
 	"keywords": [
 		"Software",
@@ -15,5 +15,8 @@
 		"test": "echo \"Error: no test specified\" && exit 1"
 	},
 	"author": "Per Røine <per.roine@gmail.com>",
+	"contributors": [
+		"Jeffrey Davidsz <jeffrey.davidsz@vicreo.eu>"
+	],
 	"license": "MIT"
 }
