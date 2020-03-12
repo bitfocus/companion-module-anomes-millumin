@@ -1,5 +1,8 @@
 {
-	"name": "millumin",
+	"name": "anomes-millumin",
+	"legacy": [
+		"millumin"
+	],
 	"version": "1.0.6",
 	"api_version": "1.0.0",
 	"keywords": [
