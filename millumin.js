@@ -183,7 +183,7 @@ class instance extends instance_skel {
 				type: "i",
 				value: parseInt(action.options.int)
 			};
-			this.system.emit('osc_send', this.config.host, this.config.port, osc[id], [arg]);
+			this.oscSend(this.config.host, this.config.port, osc[id], [arg]);
 		}
 
 		else if (id == 'lColumn')  {
@@ -192,7 +192,7 @@ class instance extends instance_skel {
 				type: "i",
 				value: parseInt(action.options.int)
 			};
-			this.system.emit('osc_send', this.config.host, this.config.port, osc[id], [arg]);
+			this.oscSend(this.config.host, this.config.port, osc[id], [arg]);
 		}
 
 		else if (id == 'lColumnName')  {
@@ -201,7 +201,7 @@ class instance extends instance_skel {
 				type: "s",
 				value: action.options.string
 			};
-			this.system.emit('osc_send', this.config.host, this.config.port, osc[id], [arg]);
+			this.oscSend(this.config.host, this.config.port, osc[id], [arg]);
 		}
 
 		else if (id == 'gotoTlSeg')  {
@@ -210,7 +210,7 @@ class instance extends instance_skel {
 				type: "s",
 				value: "" + action.options.string
 			};
-			this.system.emit('osc_send', this.config.host, this.config.port, osc[id], [arg]);
+			this.oscSend(this.config.host, this.config.port, osc[id], [arg]);
 		}
 
 		else if (id == 'normTime')  {
@@ -219,7 +219,7 @@ class instance extends instance_skel {
 				type: "f",
 				value: parseFloat(action.options.float)
 			};
-			this.system.emit('osc_send', this.config.host, this.config.port, osc[id], [arg]);
+			this.oscSend(this.config.host, this.config.port, osc[id], [arg]);
 		}
 
 		else if (id == 'startMediaAtColumn')  {
@@ -228,7 +228,7 @@ class instance extends instance_skel {
 				type: "i",
 				value: parseInt(action.options.int)
 			};
-			this.system.emit('osc_send', this.config.host, this.config.port, osc[id], [arg]);
+			this.oscSend(this.config.host, this.config.port, osc[id], [arg]);
 		}
 
 		else if (id == 'startNamedMedia')  {
@@ -237,7 +237,7 @@ class instance extends instance_skel {
 				type: "s",
 				value: "" + action.options.string
 			};
-			this.system.emit('osc_send', this.config.host, this.config.port, osc[id], [arg]);
+			this.oscSend(this.config.host, this.config.port, osc[id], [arg]);
 		}
 
 		else if (id == 'selectLayer')  {
@@ -245,7 +245,7 @@ class instance extends instance_skel {
 				type: "i",
 				value: parseInt(action.options.int)
 			};
-			this.system.emit('osc_send', this.config.host, this.config.port, osc[id], [arg]);
+			this.oscSend(this.config.host, this.config.port, osc[id], [arg]);
 			debug('sending ',osc[id],arg,"to",this.config.host);
 		}
 
@@ -255,7 +255,7 @@ class instance extends instance_skel {
 				type: "i",
 				value: parseInt(action.options.int)
 			};
-			this.system.emit('osc_send', this.config.host, this.config.port, osc[id], [arg]);
+			this.oscSend(this.config.host, this.config.port, osc[id], [arg]);
 		}
 
 		else if (id == 'playMediaInColumn') {
@@ -268,10 +268,10 @@ class instance extends instance_skel {
 				type: "i",
 				value: parseInt(action.options.int)
 			}
-			this.system.emit('osc_send', this.config.host, this.config.port, '/millumin/action/selectLayer', [argL]);
+			this.oscSend(this.config.host, this.config.port, '/millumin/action/selectLayer', [argL]);
 			currentColumn = action.options.int
 			this.setVariable('currentColumn', action.options.int)
-			this.system.emit('osc_send', this.config.host, this.config.port, '/millumin/selectedLayer/startMedia', [arg]);
+			this.oscSend(this.config.host, this.config.port, '/millumin/selectedLayer/startMedia', [arg]);
 			// console.log('returning var ',this.getVariable('currentColumn'))
 		}
 
@@ -286,8 +286,8 @@ class instance extends instance_skel {
 				type: "i",
 				value: parseInt(currentColumn)
 			}
-			this.system.emit('osc_send', this.config.host, this.config.port, '/millumin/action/selectLayer', [argL]);
-			this.system.emit('osc_send', this.config.host, this.config.port, '/millumin/selectedLayer/startMedia', [arg]);
+			this.oscSend(this.config.host, this.config.port, '/millumin/action/selectLayer', [argL]);
+			this.oscSend(this.config.host, this.config.port, '/millumin/selectedLayer/startMedia', [arg]);
 			this.setVariable('currentColumn', currentColumn)
 		}
 
@@ -303,14 +303,14 @@ class instance extends instance_skel {
 				value: parseInt(currentColumn)
 			}
 
-			this.system.emit('osc_send', this.config.host, this.config.port, '/millumin/action/selectLayer', [argL]);
-			this.system.emit('osc_send', this.config.host, this.config.port, '/millumin/selectedLayer/startMedia', [arg]);
+			this.oscSend(this.config.host, this.config.port, '/millumin/action/selectLayer', [argL]);
+			this.oscSend(this.config.host, this.config.port, '/millumin/selectedLayer/startMedia', [arg]);
 			this.setVariable('currentColumn', currentColumn)
 		}
 
 		else if (osc[id] !== undefined) {
 			debug('sending adress only',osc[id],"to",this.config.host);
-			this.system.emit('osc_send', this.config.host, this.config.port, osc[id], []);
+			this.oscSend(this.config.host, this.config.port, osc[id], []);
 		}
 	}
 }
