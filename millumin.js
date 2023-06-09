@@ -3,6 +3,7 @@ import OSC from 'osc';
 import actions from "./actions.js"
 import configFields from './configFields.js';
 import feedbacks from './feedbacks.js';
+import { formatSeconds } from './utils.js';
 const {UDPPort} = OSC;
 
 class MilluminInstance extends InstanceBase {
@@ -36,13 +37,15 @@ class MilluminInstance extends InstanceBase {
 
 		var variables = [
 			{ variableId: 'currentColumn', name: 'Current column' },
-			{ variableId: 'remainingTime', name: 'Remaining time of clips' }
+			{ variableId: 'remainingTime', name: 'Remaining time of clips' },
+			{ variableId: 'formattedRemainingTime', name: 'Formatted remaining time' }
 		]
 
 		this.setVariableDefinitions(variables)
 		this.setVariableValues({
 			currentColumn: 0,
 			remainingTime: 0,
+			formattedRemainingTime: '00:00:00',
 		})
 		this.currentColumn = 0;
 	}
@@ -100,7 +103,16 @@ class MilluminInstance extends InstanceBase {
 					this.currentColumn = message.args[0].value;
 					this.checkFeedbacks('launchedColumn')
 				} else if (message.address.match(`/millumin/layer:${this.config.layer}/media/time`)) {
-					this.setVariableValues({remainingTime: Math.round(message.args[1].value - message.args[0].value)})
+					const remainingTimeInSeconds = Math.round(message.args[1].value - message.args[0].value);
+					this.setVariableValues({
+						remainingTime: remainingTimeInSeconds,
+						formattedRemainingTime: formatSeconds(remainingTimeInSeconds),
+					});
+				} else if (message.address.match(`/millumin/layer:${this.config.layer}/mediaStopped`)) {
+					this.setVariableValues({
+						remainingTime: 0,
+						formattedRemainingTime: '00:00:00',
+					})
 				} else {
 					this.log('debug', message.address, message.args);
 				}
