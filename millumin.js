@@ -2,8 +2,6 @@ import { InstanceBase, InstanceStatus, runEntrypoint } from '@companion-module/b
 import OSC from 'osc';
 import actions from "./actions.js"
 import configFields from './configFields.js';
-var log;
-let currentColumn;
 const {UDPPort} = OSC;
 
 class MilluminInstance extends InstanceBase {
@@ -25,7 +23,6 @@ class MilluminInstance extends InstanceBase {
 
 	async init(config) {
 		this.updateStatus(InstanceStatus.Connecting);
-		log = this.log;
 		this.configUpdated(config);
 		this.setActionDefinitions(this.actions())
 		this.initVariables()
