@@ -2,6 +2,7 @@ import { InstanceBase, InstanceStatus, runEntrypoint } from '@companion-module/b
 import OSC from 'osc';
 import actions from "./actions.js"
 import configFields from './configFields.js';
+import feedbacks from './feedbacks.js';
 const {UDPPort} = OSC;
 
 class MilluminInstance extends InstanceBase {
@@ -12,6 +13,7 @@ class MilluminInstance extends InstanceBase {
 		Object.assign(this, {
 			...actions,
 			...configFields,
+			...feedbacks,
 		})
 		this.connecting = false;
 		this.actions()
@@ -25,6 +27,7 @@ class MilluminInstance extends InstanceBase {
 		this.updateStatus(InstanceStatus.Connecting);
 		this.configUpdated(config);
 		this.setActionDefinitions(this.actions())
+		this.setFeedbackDefinitions(this.feedbacks());
 		this.initVariables()
 		this.initOsc()
 	}
@@ -37,7 +40,11 @@ class MilluminInstance extends InstanceBase {
 		]
 
 		this.setVariableDefinitions(variables)
-
+		this.setVariableValues({
+			currentColumn: 0,
+			remainingTime: 0,
+		})
+		this.currentColumn = 0;
 	}
 	initOsc() {
 
@@ -89,8 +96,9 @@ class MilluminInstance extends InstanceBase {
 
 			this.mSocket.on("message", (message) => {
 				if (message.address.match('/millumin/board/launchedColumn')) {
-					currentColumn = message.args[0].value
 					this.setVariableValues({currentColumn: message.args[0].value})
+					this.currentColumn = message.args[0].value;
+					this.checkFeedbacks('launchedColumn')
 				} else if (message.address.match(`/millumin/layer:${this.config.layer}/media/time`)) {
 					this.setVariableValues({remainingTime: Math.round(message.args[1].value - message.args[0].value)})
 				} else {
