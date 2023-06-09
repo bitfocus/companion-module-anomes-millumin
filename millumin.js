@@ -22,15 +22,15 @@ class MilluminInstance extends InstanceBase {
 
 	configUpdated(config) {
 		this.config = config;
+		this.initOsc();
 	}
 
 	async init(config) {
 		this.updateStatus(InstanceStatus.Connecting);
-		this.configUpdated(config);
 		this.setActionDefinitions(this.actions())
 		this.setFeedbackDefinitions(this.feedbacks());
 		this.initVariables()
-		this.initOsc()
+		this.configUpdated(config);
 	}
 
 	initVariables() {
@@ -58,6 +58,7 @@ class MilluminInstance extends InstanceBase {
 		}
 
 		if (this.mSocket) {
+			this.connecting = true;
 			this.mSocket.close();
 		}
 
@@ -84,10 +85,10 @@ class MilluminInstance extends InstanceBase {
 
 			this.mSocket.on("close",() => {
 				this.log('error', "Connection to Millumin Closed");
-				this.connecting = false;
-				this.mSocket.removeAllListeners();
 				this.updateStatus(InstanceStatus.Disconnected);
-
+				if (!this.connecting) {
+					this.mSocket.removeAllListeners();
+				}
 			});
 
 			this.mSocket.on("ready", () => {
