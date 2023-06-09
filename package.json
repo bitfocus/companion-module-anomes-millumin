@@ -1,33 +1,21 @@
 {
 	"name": "anomes-millumin",
-	"legacy": [
-		"millumin"
-	],
-	"version": "1.0.8",
-	"api_version": "1.0.0",
-	"keywords": [
-		"Software",
-		"Video"
-	],
-	"manufacturer": "Anomes",
-	"product": "Millumin 2",
-	"shortname": "millumin",
-	"description": "Millumin plugin for Companion",
+	"version": "2.0.0",
 	"main": "millumin.js",
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1"
 	},
-	"author": "Per Røine <per.roine@gmail.com>",
-	"contributors": [
-		"Jeffrey Davidsz <jeffrey.davidsz@vicreo.eu>"
-	],
+	"type": "module",
 	"license": "MIT",
-	"homepage": "https://github.com/bitfocus/companion-module-anomes-millumin#readme",
-	"bugs": {
-		"url": "https://github.com/bitfocus/companion-module-anomes-millumin/issues"
-	},
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/bitfocus/companion-module-anomes-millumin.git"
+	},
+	"dependencies": {
+		"@companion-module/base": "~1.4.1",
+		"osc": "^2.4.4"
+	},
+	"devDependencies": {
+		"@companion-module/tools": "^1.2.1"
 	}
 }
