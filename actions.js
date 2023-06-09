@@ -36,7 +36,7 @@ export default {
 				regex: Regex.NUMBER
 			}],
 			callback: async (event) => {
-				this.log('debug','sending ',oscCommands[event.actionId],"to",this.config.host);
+				this.log('debug',`sending ${oscCommands[event.actionId]} to ${this.config.host}`);
 				const arg = {
 					type: "i",
 					value: parseInt(event.options.int)
@@ -57,7 +57,7 @@ export default {
 				}
 			],
 			callback: async (event) => {
-				this.log('debug','sending ',oscCommands[event.actionId],"to",this.config.host);
+				this.log('debug',`sending ${oscCommands[event.actionId]} to ${this.config.host}`);
 				const arg = {
 					type: "i",
 					value: parseInt(event.options.int)
@@ -76,7 +76,7 @@ export default {
 				}
 			],
 			callback: async (event) => {
-				this.log('debug','sending ',oscCommands[event.actionId],"to",this.config.host);
+				this.log('debug',`sending ${oscCommands[event.actionId]} to ${this.config.host}`);
 				const arg = {
 					type: "s",
 					value: event.options.string
@@ -96,7 +96,7 @@ export default {
 				}
 			],
 			callback: async (event) => {
-				this.log('debug','sending ',oscCommands[event.actionId],"to",this.config.host);
+				this.log('debug',`sending ${oscCommands[event.actionId]} to ${this.config.host}`);
 				const arg = {
 					type: "s",
 					value: "" + event.options.string
@@ -117,7 +117,7 @@ export default {
 				}
 			],
 			callback: async (event) => {
-				this.log('debug','sending ',oscCommands[event.actionId],"to",this.config.host);
+				this.log('debug',`sending ${oscCommands[event.actionId]} to ${this.config.host}`);
 				const arg = {
 					type: "f",
 					value: parseFloat(event.options.float)
@@ -139,7 +139,7 @@ export default {
 				}
 			],
 			callback: async (event) => {
-				this.log('debug','sending ',oscCommands[event.actionId],"to",this.config.host);
+				this.log('debug',`sending ${oscCommands[event.actionId]} to ${this.config.host}`);
 				const arg = {
 					type: "i",
 					value: parseInt(event.options.int)
@@ -159,7 +159,7 @@ export default {
 				}
 			],
 			callback: async (event) => {
-				this.log('debug','sending ',oscCommands[event.actionId],"to",this.config.host);
+				this.log('debug',`sending ${oscCommands[event.actionId]} to ${this.config.host}`);
 				const arg = {
 					type: "s",
 					value: "" + event.options.string
@@ -200,7 +200,7 @@ export default {
 				}
 			],
 			callback: async (event) => {
-				this.log('debug','sending ',oscCommands[event.actionId],"to",this.config.host);
+				this.log('debug',`sending ${oscCommands[event.actionId]} to ${this.config.host}`);
 				const arg = {
 					type: "i",
 					value: parseInt(event.options.int)
