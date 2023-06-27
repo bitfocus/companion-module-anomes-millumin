@@ -3,7 +3,7 @@
 	"name": "anomes-millumin",
 	"shortname": "millumin",
 	"description": "Millumin plugin for Companion",
-	"version": "2.0.0",
+	"version": "3.0.0-0",
 	"license": "MIT",
 	"repository": "git+https://github.com/bitfocus/companion-module-anomes-millumin.git",
 	"bugs": "https://github.com/bitfocus/companion-module-anomes-millumin/issues",
@@ -19,6 +19,10 @@
 		{
 			"name": "Matteo Piccina",
 			"email": "matteo.piccina@gmail.com"
+		},
+		{
+			"name": "Millumin",
+			"email": "contact@millumin.com"
 		}
 	],
 	"legacyIds": [
@@ -28,7 +32,7 @@
 		"type": "node18",
 		"api": "nodejs-ipc",
 		"apiVersion": "0.0.0",
-		"entrypoint": "../millumin.js"
+		"entrypoint": "../dist/index.js"
 	},
 	"manufacturer": "Anomes",
 	"products": [
