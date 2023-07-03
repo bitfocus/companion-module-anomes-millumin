@@ -18,8 +18,8 @@
 	"license": "MIT",
 	"prettier": "@companion-module/tools/.prettierrc.json",
 	"dependencies": {
-		"@companion-module/base": "^1.1.1",
-		"osc": "^2.4.3"
+		"@companion-module/base": "~1.4.1",
+		"osc": "^2.4.4"
 	},
 	"devDependencies": {
 		"@companion-module/tools": "^0.5.2",
