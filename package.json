@@ -12,8 +12,7 @@
 		"build": "rimraf dist && yarn build:main",
 		"build:main": "tsc -p tsconfig.build.json",
 		"build:watch": "tsc -p tsconfig.build.json --watch",
-		"lint": "eslint ./src --ext .ts",
-		"postinstall": "yarn build"
+		"lint": "eslint ./src --ext .ts"
 	},
 	"license": "MIT",
 	"prettier": "@companion-module/tools/.prettierrc.json",
