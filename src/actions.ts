@@ -1,8 +1,6 @@
 import { CompanionActionDefinition, CompanionActionDefinitions } from '@companion-module/base'
 import { MilluminConfig } from './config'
-import { InstanceBaseExt , options } from './utils'
-
-
+import { InstanceBaseExt, options } from './utils'
 
 export enum ActionId {
 	Action_LaunchOrStopColumn_ByIndex = 'Action_LaunchOrStopColumn_ByIndex',
@@ -47,39 +45,36 @@ export enum ActionId {
 	Action_SelectedLayer_SetMediaSpeed = 'Action_SelectedLayer_SetMediaSpeed',
 }
 
-
-
-
-
 export function GetActions(instance: InstanceBaseExt<MilluminConfig>): CompanionActionDefinitions {
-
 	const actions: { [id in ActionId]: CompanionActionDefinition | undefined } = {
 		[ActionId.Action_LaunchOrStopColumn_ByIndex]: {
 			name: 'Launch or Stop Column by Index',
 			options: [options.index],
 			callback: (action): void => {
-				if (instance.OSC) instance.OSC.sendCommand('/action/launchOrStopColumn', [{type:'i',value:action.options.index}])
+				if (instance.OSC)
+					instance.OSC.sendCommand('/action/launchOrStopColumn', [{ type: 'i', value: action.options.index }])
 			},
 		},
 		[ActionId.Action_LaunchOrStopColumn_ByName]: {
 			name: 'Launch or Stop Column by Name',
 			options: [options.name],
 			callback: (action): void => {
-				if (instance.OSC) instance.OSC.sendCommand('/action/launchOrStopColumn', [{type:'s',value:action.options.name}])
+				if (instance.OSC)
+					instance.OSC.sendCommand('/action/launchOrStopColumn', [{ type: 's', value: action.options.name }])
 			},
 		},
 		[ActionId.Action_LaunchColumn_ByIndex]: {
 			name: 'Launch Column by Index',
 			options: [options.index],
 			callback: (action): void => {
-				if (instance.OSC) instance.OSC.sendCommand('/action/launchColumn', [{type:'i',value:action.options.index}])
+				if (instance.OSC) instance.OSC.sendCommand('/action/launchColumn', [{ type: 'i', value: action.options.index }])
 			},
 		},
 		[ActionId.Action_LaunchColumn_ByName]: {
 			name: 'Launch Column by Name',
 			options: [options.name],
 			callback: (action): void => {
-				if (instance.OSC) instance.OSC.sendCommand('/action/launchColumn', [{type:'s',value:action.options.name}])
+				if (instance.OSC) instance.OSC.sendCommand('/action/launchColumn', [{ type: 's', value: action.options.name }])
 			},
 		},
 		[ActionId.Action_StopColumn]: {
@@ -128,77 +123,78 @@ export function GetActions(instance: InstanceBaseExt<MilluminConfig>): Companion
 			name: 'Go to Time',
 			options: [options.time],
 			callback: (action): void => {
-				if (instance.OSC) instance.OSC.sendCommand('/action/goToTime', [{type:'f',value:action.options.time}])
+				if (instance.OSC) instance.OSC.sendCommand('/action/goToTime', [{ type: 'f', value: action.options.time }])
 			},
 		},
 		[ActionId.Action_GoToTimelineSegment]: {
 			name: 'Go to Timeline Segment',
 			options: [options.name],
 			callback: (action): void => {
-				if (instance.OSC) instance.OSC.sendCommand('/action/goToTimelineSegment', [{type:'s',value:action.options.name}])
+				if (instance.OSC)
+					instance.OSC.sendCommand('/action/goToTimelineSegment', [{ type: 's', value: action.options.name }])
 			},
 		},
 		[ActionId.Action_SelectBoard_ByIndex]: {
 			name: 'Select Board By Index',
 			options: [options.index],
 			callback: (action): void => {
-				if (instance.OSC) instance.OSC.sendCommand('/action/selectBoard', [{type:'i',value:action.options.index}])
+				if (instance.OSC) instance.OSC.sendCommand('/action/selectBoard', [{ type: 'i', value: action.options.index }])
 			},
 		},
 		[ActionId.Action_SelectBoard_ByName]: {
 			name: 'Select Board By Index',
 			options: [options.name],
 			callback: (action): void => {
-				if (instance.OSC) instance.OSC.sendCommand('/action/selectBoard', [{type:'s',value:action.options.name}])
+				if (instance.OSC) instance.OSC.sendCommand('/action/selectBoard', [{ type: 's', value: action.options.name }])
 			},
 		},
 		[ActionId.Action_SelectLayer_ByIndex]: {
 			name: 'Select Layer By Index',
 			options: [options.index],
 			callback: (action): void => {
-				if (instance.OSC) instance.OSC.sendCommand('/action/selectLayer', [{type:'i',value:action.options.index}])
+				if (instance.OSC) instance.OSC.sendCommand('/action/selectLayer', [{ type: 'i', value: action.options.index }])
 			},
 		},
 		[ActionId.Action_SelectLayer_ByName]: {
 			name: 'Select Layer By Index',
 			options: [options.name],
 			callback: (action): void => {
-				if (instance.OSC) instance.OSC.sendCommand('/action/selectLayer', [{type:'s',value:action.options.name}])
+				if (instance.OSC) instance.OSC.sendCommand('/action/selectLayer', [{ type: 's', value: action.options.name }])
 			},
 		},
 		[ActionId.Action_SelectLight_ByIndex]: {
 			name: 'Select Light By Index',
 			options: [options.index],
 			callback: (action): void => {
-				if (instance.OSC) instance.OSC.sendCommand('/action/selectLight', [{type:'i',value:action.options.index}])
+				if (instance.OSC) instance.OSC.sendCommand('/action/selectLight', [{ type: 'i', value: action.options.index }])
 			},
 		},
 		[ActionId.Action_SelectLight_ByName]: {
 			name: 'Select Light By Index',
 			options: [options.name],
 			callback: (action): void => {
-				if (instance.OSC) instance.OSC.sendCommand('/action/selectLight', [{type:'s',value:action.options.name}])
+				if (instance.OSC) instance.OSC.sendCommand('/action/selectLight', [{ type: 's', value: action.options.name }])
 			},
 		},
 		[ActionId.Action_SetMasterVideo]: {
 			name: 'Set Master Video',
 			options: [options.value],
 			callback: (action): void => {
-				if (instance.OSC) instance.OSC.sendCommand('/masterVideo', [{type:'f',value:action.options.value}])
+				if (instance.OSC) instance.OSC.sendCommand('/masterVideo', [{ type: 'f', value: action.options.value }])
 			},
 		},
 		[ActionId.Action_SetMasterAudio]: {
 			name: 'Set Master Audio',
 			options: [options.value],
 			callback: (action): void => {
-				if (instance.OSC) instance.OSC.sendCommand('/masterAudio', [{type:'f',value:action.options.value}])
+				if (instance.OSC) instance.OSC.sendCommand('/masterAudio', [{ type: 'f', value: action.options.value }])
 			},
 		},
 		[ActionId.Action_SetMasterDMX]: {
 			name: 'Set Master MDX',
 			options: [options.value],
 			callback: (action): void => {
-				if (instance.OSC) instance.OSC.sendCommand('/masterDMX', [{type:'f',value:action.options.value}])
+				if (instance.OSC) instance.OSC.sendCommand('/masterDMX', [{ type: 'f', value: action.options.value }])
 			},
 		},
 		[ActionId.Action_EnterFullscreen]: {
@@ -247,7 +243,7 @@ export function GetActions(instance: InstanceBaseExt<MilluminConfig>): Companion
 			name: 'Open Project',
 			options: [options.name],
 			callback: (action): void => {
-				if (instance.OSC) instance.OSC.sendCommand('/action/openProject', [{type:'s',value:action.options.name}])
+				if (instance.OSC) instance.OSC.sendCommand('/action/openProject', [{ type: 's', value: action.options.name }])
 			},
 		},
 		[ActionId.Action_SaveProject]: {
@@ -261,7 +257,7 @@ export function GetActions(instance: InstanceBaseExt<MilluminConfig>): Companion
 			name: 'Save Project As',
 			options: [options.name],
 			callback: (action): void => {
-				if (instance.OSC) instance.OSC.sendCommand('/action/saveProject', [{type:'s',value:action.options.name}])
+				if (instance.OSC) instance.OSC.sendCommand('/action/saveProject', [{ type: 's', value: action.options.name }])
 			},
 		},
 		[ActionId.Action_Quit]: {
@@ -271,7 +267,6 @@ export function GetActions(instance: InstanceBaseExt<MilluminConfig>): Companion
 				if (instance.OSC) instance.OSC.sendCommand('/action/quit', [])
 			},
 		},
-
 
 		[ActionId.Action_SelectedLayer_RestartMedia]: {
 			name: 'Selected Layer / Restart Media',
@@ -284,14 +279,16 @@ export function GetActions(instance: InstanceBaseExt<MilluminConfig>): Companion
 			name: 'Selected Layer / Start Media by Index',
 			options: [options.index],
 			callback: (action): void => {
-				if (instance.OSC) instance.OSC.sendCommand('/selectedLayer/startMedia', [{type:'i',value:action.options.index}])
+				if (instance.OSC)
+					instance.OSC.sendCommand('/selectedLayer/startMedia', [{ type: 'i', value: action.options.index }])
 			},
 		},
 		[ActionId.Action_SelectedLayer_StartMedia_ByName]: {
 			name: 'Selected Layer / Start Media by Name',
 			options: [options.name],
 			callback: (action): void => {
-				if (instance.OSC) instance.OSC.sendCommand('/selectedLayer/startMedia', [{type:'s',value:action.options.name}])
+				if (instance.OSC)
+					instance.OSC.sendCommand('/selectedLayer/startMedia', [{ type: 's', value: action.options.name }])
 			},
 		},
 		[ActionId.Action_SelectedLayer_PauseMedia]: {
@@ -319,21 +316,24 @@ export function GetActions(instance: InstanceBaseExt<MilluminConfig>): Companion
 			name: 'Selected Layer / Go to Media Time',
 			options: [options.time],
 			callback: (action): void => {
-				if (instance.OSC) instance.OSC.sendCommand('/selectedLayer/media/time', [{type:'f',value:action.options.time}])
+				if (instance.OSC)
+					instance.OSC.sendCommand('/selectedLayer/media/time', [{ type: 'f', value: action.options.time }])
 			},
 		},
 		[ActionId.Action_SelectedLayer_GoToMediaNormalizedTime]: {
 			name: 'Selected Layer / Go to Media Normalized Time',
 			options: [options.value],
 			callback: (action): void => {
-				if (instance.OSC) instance.OSC.sendCommand('/selectedLayer/media/normalizedTime', [{type:'f',value:action.options.value}])
+				if (instance.OSC)
+					instance.OSC.sendCommand('/selectedLayer/media/normalizedTime', [{ type: 'f', value: action.options.value }])
 			},
 		},
 		[ActionId.Action_SelectedLayer_SetMediaSpeed]: {
 			name: 'Selected Layer / Set Media Speed',
 			options: [options.value],
 			callback: (action): void => {
-				if (instance.OSC) instance.OSC.sendCommand('/selectedLayer/media/speed', [{type:'f',value:action.options.value}])
+				if (instance.OSC)
+					instance.OSC.sendCommand('/selectedLayer/media/speed', [{ type: 'f', value: action.options.value }])
 			},
 		},
 	}

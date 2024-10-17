@@ -10,7 +10,7 @@ import { v2Actions } from './v2CommandsToUpgradeTov3'
 
 export function UpgradeV2toV3(
 	_context: CompanionUpgradeContext<MilluminConfig>,
-	_props: CompanionStaticUpgradeProps<MilluminConfig>
+	_props: CompanionStaticUpgradeProps<MilluminConfig>,
 ): CompanionStaticUpgradeResult<MilluminConfig> {
 	const result: CompanionStaticUpgradeResult<MilluminConfig> = {
 		updatedActions: [],
@@ -23,7 +23,7 @@ export function UpgradeV2toV3(
 
 export function UpgradeV2ToV3(
 	_context: CompanionUpgradeContext<MilluminConfig>,
-	props: CompanionStaticUpgradeProps<MilluminConfig>
+	props: CompanionStaticUpgradeProps<MilluminConfig>,
 ): CompanionStaticUpgradeResult<MilluminConfig> {
 	// let config: MilluminConfig = props.config;
 	const actions: CompanionMigrationAction[] = props.actions
@@ -37,8 +37,8 @@ export function UpgradeV2ToV3(
 	for (const action of actions) {
 		if (
 			(action.actionId === 'UserActions' ||
-			 action.actionId === 'GlobalActions' ||
-			 action.actionId === 'SpecialActions') &&
+				action.actionId === 'GlobalActions' ||
+				action.actionId === 'SpecialActions') &&
 			action.options.actionID !== undefined &&
 			Object.prototype.hasOwnProperty.call(v2Actions, action.options.actionID as string)
 		) {

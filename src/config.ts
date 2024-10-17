@@ -1,7 +1,5 @@
 import { Regex, SomeCompanionConfigField } from '@companion-module/base'
 
-
-
 export interface MilluminConfig {
 	label: string
 	host: string
@@ -9,8 +7,6 @@ export interface MilluminConfig {
 	rx_port: number
 	timeLayerName: string
 }
-
-
 
 export const GetConfigFields = (): SomeCompanionConfigField[] => {
 	return [
@@ -27,7 +23,7 @@ export const GetConfigFields = (): SomeCompanionConfigField[] => {
 			label: 'The IP of the computer running Millumin',
 			width: 12,
 			default: '127.0.0.1',
-			regex: Regex.IP
+			regex: Regex.IP,
 		},
 		{
 			type: 'number',
@@ -61,7 +57,7 @@ export const GetConfigFields = (): SomeCompanionConfigField[] => {
 			id: 'timeLayerName',
 			label: 'Name of the layer to track time',
 			width: 12,
-			default: 'layer'
-		}
+			default: 'layer',
+		},
 	]
 }

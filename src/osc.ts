@@ -3,8 +3,6 @@ import { InstanceStatus, OSCSomeArguments } from '@companion-module/base'
 import { MilluminConfig } from './config'
 const osc = require('osc') // eslint-disable-line
 
-
-
 export interface OSCResponse {
 	address: string
 	args: {
@@ -12,7 +10,6 @@ export interface OSCResponse {
 		value: any
 	}[]
 }
-
 
 export class OSC {
 	private readonly instance: InstanceBaseExt<MilluminConfig>
@@ -30,7 +27,6 @@ export class OSC {
 		if (this.udpPort) this.udpPort.close()
 		return
 	}
-
 
 	public readonly Connect = (): void => {
 		this.oscHost = this.instance.config.host || '127.0.0.1'
@@ -58,7 +54,6 @@ export class OSC {
 			}
 		})
 
-
 		// Open the socket.
 		this.udpPort.open()
 
@@ -71,11 +66,9 @@ export class OSC {
 		return
 	}
 
-
 	private processData = async (data: OSCResponse) => {
 		this.instance.ReceiveOSCResponse(data)
 	}
-
 
 	public readonly sendCommand = (path: string, args?: OSCSomeArguments): void => {
 		// this.instance.log('debug', `sending ${JSON.stringify(path)} ${args ? JSON.stringify(args) : ''}`)
@@ -85,9 +78,7 @@ export class OSC {
 				args: args ? args : [],
 			},
 			this.oscHost,
-			this.oscTXPort
+			this.oscTXPort,
 		)
 	}
-
-
 }

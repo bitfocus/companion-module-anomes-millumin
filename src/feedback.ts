@@ -2,13 +2,9 @@ import { CompanionFeedbackDefinitions, CompanionFeedbackDefinition } from '@comp
 import { MilluminConfig } from './config'
 import { InstanceBaseExt } from './utils'
 
-export enum FeedbackId {
-}
+export enum FeedbackId {}
 
 export function GetFeedbacks(instance: InstanceBaseExt<MilluminConfig>): CompanionFeedbackDefinitions {
-	if (instance.OSC) {
-	}
-	const feedbacks: { [id in FeedbackId]: CompanionFeedbackDefinition | undefined } = {
-	}
+	const feedbacks: { [id in FeedbackId]: CompanionFeedbackDefinition | undefined } = {}
 	return feedbacks
 }

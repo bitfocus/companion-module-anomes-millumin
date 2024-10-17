@@ -1,9 +1,7 @@
-import { CompanionInputFieldNumber , CompanionInputFieldTextInput , InstanceBase } from '@companion-module/base'
+import { CompanionInputFieldNumber, CompanionInputFieldTextInput, InstanceBase } from '@companion-module/base'
 import { OSCResponse } from './osc'
 
-
 type EnforceDefault<T, U> = Omit<T, 'default'> & { default: U }
-
 
 export interface Options {
 	index: EnforceDefault<CompanionInputFieldNumber, number>
@@ -11,7 +9,6 @@ export interface Options {
 	time: EnforceDefault<CompanionInputFieldNumber, number>
 	value: EnforceDefault<CompanionInputFieldNumber, number>
 }
-
 
 export const options: Options = {
 	index: {
@@ -45,7 +42,6 @@ export const options: Options = {
 		max: 65535,
 	},
 }
-
 
 export interface InstanceBaseExt<TConfig> extends InstanceBase<TConfig> {
 	config: TConfig

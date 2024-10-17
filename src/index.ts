@@ -7,16 +7,13 @@ import { initVariables, updateVariables } from './variables'
 import { OSC, OSCResponse } from './osc'
 import { UpgradeV2ToV3 } from './upgrades'
 
-
-
-
 class MilluminInstance extends InstanceBase<MilluminConfig> {
 	public config: MilluminConfig = {
 		label: '',
 		host: '',
 		tx_port: 0,
 		rx_port: 0,
-		timeLayerName: ''
+		timeLayerName: '',
 	}
 
 	public OSC: OSC | null = null
@@ -78,13 +75,11 @@ class MilluminInstance extends InstanceBase<MilluminConfig> {
 			this.currentColumnIndex = data.args[0].value
 			if (1 < data.args.length) {
 				this.currentColumnName = data.args[1].value
-			}
-			else {
+			} else {
 				this.currentColumnName = ''
 			}
 			this.UpdateVariablesValues()
-		}
-		else if (data.address.toString() == '/millumin/board/stoppedColumn' && 0 < data.args.length) {
+		} else if (data.address.toString() == '/millumin/board/stoppedColumn' && 0 < data.args.length) {
 			if (this.currentColumnIndex == data.args[0].value) {
 				this.currentColumnIndex = 0
 				this.currentColumnName = ''
@@ -92,31 +87,39 @@ class MilluminInstance extends InstanceBase<MilluminConfig> {
 				this.nextColumnName = ''
 				this.UpdateVariablesValues()
 			}
-		}
-		else if (data.address.toString() == '/millumin/info' && 6 <= data.args.length && data.args[0].value == 'board/launchedColumn') {
+		} else if (
+			data.address.toString() == '/millumin/info' &&
+			6 <= data.args.length &&
+			data.args[0].value == 'board/launchedColumn'
+		) {
 			this.previousColumnName = data.args[2].value
 			this.nextColumnName = data.args[4].value
 			this.UpdateVariablesValues()
-		}
-		else if(data.address.toString() == `/millumin/layer:${this.config.timeLayerName.toLowerCase()}/media/time` && 2 <= data.args.length) {
+		} else if (
+			data.address.toString() == `/millumin/layer:${this.config.timeLayerName.toLowerCase()}/media/time` &&
+			2 <= data.args.length
+		) {
 			this.timeLayerElapsedTime = data.args[0].value
 			this.timeLayerDuration = data.args[1].value
 			this.UpdateVariablesValues()
-		}
-		else if(data.address.toString() == `/millumin/layer:${this.config.timeLayerName.toLowerCase()}/mediaStarted` && 1 <= data.args.length) {
+		} else if (
+			data.address.toString() == `/millumin/layer:${this.config.timeLayerName.toLowerCase()}/mediaStarted` &&
+			1 <= data.args.length
+		) {
 			this.timeLayerMediaIndex = data.args[1].value
-			if(3 <= data.args.length) {
+			if (3 <= data.args.length) {
 				this.timeLayerElapsedTime = 0
 				this.timeLayerDuration = data.args[2].value
-			}
-			else {
+			} else {
 				this.timeLayerElapsedTime = 0
 				this.timeLayerDuration = 0
 			}
 			this.UpdateVariablesValues()
-		}
-		else if(data.address.toString() == `/millumin/layer:${this.config.timeLayerName.toLowerCase()}/mediaStopped` && 1 <= data.args.length) {
-			if(this.timeLayerMediaIndex == data.args[1].value) {
+		} else if (
+			data.address.toString() == `/millumin/layer:${this.config.timeLayerName.toLowerCase()}/mediaStopped` &&
+			1 <= data.args.length
+		) {
+			if (this.timeLayerMediaIndex == data.args[1].value) {
 				this.timeLayerElapsedTime = 0
 				this.timeLayerDuration = 0
 			}
@@ -126,4 +129,3 @@ class MilluminInstance extends InstanceBase<MilluminConfig> {
 }
 
 runEntrypoint(MilluminInstance, [UpgradeV2ToV3])
-	
