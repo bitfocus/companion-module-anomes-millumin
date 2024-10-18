@@ -14,6 +14,7 @@ export enum ActionId {
 	PLAY = 'Action_Play',
 	PLAY_OR_PAUSE = 'Action_PlayOrPause',
 	GO_TO_TIME = 'Action_GoToTime',
+	JOG_TIME = 'Action_JogTime',
 	GO_TO_TIMELINE_SEGMENT = 'Action_GoToTimelineSegment',
 	SELECT_BOARD_BY_INDEX = 'Action_SelectBoard_ByIndex',
 	SELECT_BOARD_BY_NAME = 'Action_SelectBoard_ByName',
@@ -125,6 +126,18 @@ export function getActions(instance: InstanceBaseExt<MilluminConfig>): Companion
 			callback: (action): void => {
 				if (instance.OSC) instance.OSC.sendCommand('/action/goToTime', [{ type: 'f', value: action.options.time }])
 			},
+		},
+		[ActionId.JOG_TIME]: {
+			name: 'Jog Time',
+			description: 'This action uses media index:1 elapsed time to calculate an absolute value',
+			options: [options.time],
+			callback: (action): void => {
+				const mediaLayer = instance.mediaLayers['firstByIndex']
+				if (mediaLayer.duration === 0) return;
+				const newTime = mediaLayer.elapsedTime + action.options.time
+
+				if (instance.OSC) instance.OSC.sendCommand('/action/goToTime', [{ type: 'f', value: newTime }])
+			}
 		},
 		[ActionId.GO_TO_TIMELINE_SEGMENT]: {
 			name: 'Go to Timeline Segment',
