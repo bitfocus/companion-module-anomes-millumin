@@ -44,9 +44,9 @@ export const options: Options = {
 }
 
 export interface MediaLayer {
-	timeLayerElapsedTime: any
-	timeLayerDuration: any
-	timeLayerMediaIndex: any
+	elapsedTime: any
+	duration: any
+	mediaIndex: any
 }
 
 export interface InstanceBaseExt<TConfig> extends InstanceBase<TConfig> {

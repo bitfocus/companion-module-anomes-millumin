@@ -57,21 +57,29 @@ class MilluminInstance extends InstanceBase<MilluminConfig> implements InstanceB
 	}
 
 	public updateInstance(): void {
-		this.mediaLayers = {}
-		if (this.config.trackMultipleLayers) {
-			const names = this.config.timeLayerName.split(',')
-			for (const name of names) {
-				this.mediaLayers[name] = {
-					timeLayerElapsedTime: 0,
-					timeLayerDuration: 0,
-					timeLayerMediaIndex: 0,
-				}
+		this.mediaLayers = {
+			'firstByIndex': {
+				elapsedTime: 0,
+				duration: 0,
+				mediaIndex: 0,
 			}
-		} else {
-			this.mediaLayers[this.config.timeLayerName] = {
-				timeLayerElapsedTime: 0,
-				timeLayerDuration: 0,
-				timeLayerMediaIndex: 0,
+		}
+		if (this.config.timeLayerName !== '') {
+			if (this.config.trackMultipleLayers) {
+				const names = this.config.timeLayerName.split(',')
+				for (const name of names) {
+					this.mediaLayers[name] = {
+						elapsedTime: 0,
+						duration: 0,
+						mediaIndex: 0,
+					}
+				}
+			} else {
+				this.mediaLayers[this.config.timeLayerName] = {
+					elapsedTime: 0,
+					duration: 0,
+					mediaIndex: 0,
+				}
 			}
 		}
 		initVariables(this)
@@ -115,45 +123,48 @@ class MilluminInstance extends InstanceBase<MilluminConfig> implements InstanceB
 			this.previousColumnName = data.args[2].value
 			this.nextColumnName = data.args[4].value
 			this.updateVariablesValues()
+		} else if (data.address.startsWith('/millumin/index:1/media')) {
+			this.updateMediaLayer(data.address, 'firstByIndex', data.args)
 		} else if (data.address.startsWith('/millumin/layer')) {
 			const addressParts = data.address.split('/')
 			const layerName = addressParts[2].split(':', 2)[1]
-			this.log('info', `Media layer: ${layerName}`)
 
 			if (!this.mediaLayers[layerName]) {
 				this.mediaLayers[layerName] = {
-					timeLayerMediaIndex: 0,
-					timeLayerElapsedTime: 0,
-					timeLayerDuration: 0,
+					mediaIndex: 0,
+					elapsedTime: 0,
+					duration: 0,
 				}
 			}
 
-			if (data.address.endsWith('/media/time')
-				&& 2 <= data.args.length) {
-				this.mediaLayers[layerName].timeLayerElapsedTime = data.args[0].value
-				this.mediaLayers[layerName].timeLayerDuration = data.args[1].value
-			} else if (data.address.endsWith('/mediaStarted')
-				&& 1 <= data.args.length) {
-				this.mediaLayers[layerName].timeLayerMediaIndex = data.args[1].value
-				if (3 <= data.args.length) {
-					this.mediaLayers[layerName].timeLayerElapsedTime = 0
-					this.mediaLayers[layerName].timeLayerDuration = data.args[2].value
-				} else {
-					this.mediaLayers[layerName].timeLayerElapsedTime = 0
-					this.mediaLayers[layerName].timeLayerDuration = 0
-				}
-			} else if (data.address.endsWith('/mediaStopped')&&
-				1 <= data.args.length) {
-				if (this.mediaLayers[layerName].timeLayerMediaIndex == data.args[1].value) {
-					this.mediaLayers[layerName].timeLayerElapsedTime = 0
-					this.mediaLayers[layerName].timeLayerDuration = 0
-				}
-			}
-
-			this.log('debug', JSON.stringify(this.mediaLayers))
-
-			this.updateVariablesValues()
+			this.updateMediaLayer(data.address, layerName, data.args)
 		}
+	}
+
+	public updateMediaLayer(address: string, layerName: string, args: { type: string, value: any }[]) {
+		if (address.endsWith('/media/time')
+			&& 2 <= args.length) {
+			this.mediaLayers[layerName].elapsedTime = args[0].value
+			this.mediaLayers[layerName].duration = args[1].value
+		} else if (address.endsWith('/mediaStarted')
+			&& 1 <= args.length) {
+			this.mediaLayers[layerName].mediaIndex = args[1].value
+			if (3 <= args.length) {
+				this.mediaLayers[layerName].elapsedTime = 0
+				this.mediaLayers[layerName].duration = args[2].value
+			} else {
+				this.mediaLayers[layerName].elapsedTime = 0
+				this.mediaLayers[layerName].duration = 0
+			}
+		} else if (address.endsWith('/mediaStopped')&&
+			1 <= args.length) {
+			if (this.mediaLayers[layerName].mediaIndex == args[1].value) {
+				this.mediaLayers[layerName].elapsedTime = 0
+				this.mediaLayers[layerName].duration = 0
+			}
+		}
+
+		this.updateVariablesValues()
 	}
 }
 

@@ -10,14 +10,14 @@ export function updateVariables(instance: InstanceBaseExt<MilluminConfig>): void
 	variables['nextColumnName'] = instance.nextColumnName
 	for (const mediaLayerName in instance.mediaLayers) {
 		const mediaLayer = instance.mediaLayers[mediaLayerName]
-		variables[`${mediaLayerName}_timeLayerElapsedTime`] = mediaLayer.timeLayerElapsedTime
-		variables[`${mediaLayerName}_timeLayerDuration`] = mediaLayer.timeLayerDuration
-		if (0 < mediaLayer.timeLayerDuration) {
-			variables[`${mediaLayerName}_timeLayerRemainingTime`] = mediaLayer.timeLayerDuration - mediaLayer.timeLayerElapsedTime
-			variables[`${mediaLayerName}_timeLayerProgress`] = mediaLayer.timeLayerElapsedTime / mediaLayer.timeLayerDuration
+		variables[`media_${mediaLayerName}_elapsedTime`] = mediaLayer.elapsedTime
+		variables[`media_${mediaLayerName}_duration`] = mediaLayer.duration
+		if (0 < mediaLayer.duration) {
+			variables[`media_${mediaLayerName}_remainingTime`] = mediaLayer.duration - mediaLayer.elapsedTime
+			variables[`media_${mediaLayerName}_progress`] = mediaLayer.elapsedTime / mediaLayer.duration
 		} else {
-			variables[`${mediaLayerName}_timeLayerRemainingTime`] = 0
-			variables[`${mediaLayerName}_timeLayerProgress`] = 0
+			variables[`media_${mediaLayerName}_remainingTime`] = 0
+			variables[`media_${mediaLayerName}_progress`] = 0
 		}
 	}
 
@@ -32,10 +32,10 @@ export function initVariables(instance: InstanceBaseExt<MilluminConfig>): void {
 		{ name: 'Next Column Name', variableId: 'nextColumnName' },
 	])
 	for (const mediaLayerName in instance.mediaLayers) {
-		globalSettings.add({ name: `${mediaLayerName} / Time Layer / Elapsed Time`, variableId: `${mediaLayerName}_timeLayerElapsedTime` })
-		globalSettings.add({ name: `${mediaLayerName} / Time Layer / Duration`, variableId: `${mediaLayerName}_timeLayerDuration` })
-		globalSettings.add({ name: `${mediaLayerName} / Time Layer / Remaining Time`, variableId: `${mediaLayerName}_timeLayerRemainingTime` })
-		globalSettings.add({ name: `${mediaLayerName} / Time Layer / Progress`, variableId: `${mediaLayerName}_timeLayerProgress` })
+		globalSettings.add({ name: `${mediaLayerName} / Time Layer / Elapsed Time`, variableId: `media_${mediaLayerName}_elapsedTime` })
+		globalSettings.add({ name: `${mediaLayerName} / Time Layer / Duration`, variableId: `media_${mediaLayerName}_duration` })
+		globalSettings.add({ name: `${mediaLayerName} / Time Layer / Remaining Time`, variableId: `media_${mediaLayerName}_remainingTime` })
+		globalSettings.add({ name: `${mediaLayerName} / Time Layer / Progress`, variableId: `media_${mediaLayerName}_progress` })
 	}
 	const filteredVariables = [...globalSettings]
 	instance.setVariableDefinitions(filteredVariables)
