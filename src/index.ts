@@ -1,7 +1,7 @@
 import { InstanceBase, runEntrypoint, SomeCompanionConfigField } from '@companion-module/base'
 import { getConfigFields, MilluminConfig } from './config'
 import { getActions } from './actions'
-import { getFeedbacks } from './feedback'
+import {FeedbackId, getFeedbacks} from './feedback'
 import { GetPresetList } from './presets'
 import { initVariables, updateVariables } from './variables'
 import { OSC, OSCResponse } from './osc'
@@ -165,6 +165,7 @@ class MilluminInstance extends InstanceBase<MilluminConfig> implements InstanceB
 		}
 
 		this.updateVariablesValues()
+		this.checkFeedbacks(FeedbackId.PROGRESS_BAR)
 	}
 }
 
