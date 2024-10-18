@@ -6,9 +6,10 @@ export interface MilluminConfig {
 	tx_port: number
 	rx_port: number
 	timeLayerName: string
+	trackMultipleLayers: boolean
 }
 
-export const GetConfigFields = (): SomeCompanionConfigField[] => {
+export const getConfigFields = (): SomeCompanionConfigField[] => {
 	return [
 		{
 			type: 'static-text',
@@ -59,5 +60,12 @@ export const GetConfigFields = (): SomeCompanionConfigField[] => {
 			width: 12,
 			default: 'layer',
 		},
+		{
+			type: 'checkbox',
+			id: 'trackMultipleLayers',
+			label: 'Enable tracking of multiple layer (comma separated list)',
+			width: 12,
+			default: false,
+		}
 	]
 }

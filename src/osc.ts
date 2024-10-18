@@ -67,7 +67,7 @@ export class OSC {
 	}
 
 	private processData = async (data: OSCResponse) => {
-		this.instance.ReceiveOSCResponse(data)
+		this.instance.receiveOSCResponse(data)
 	}
 
 	public readonly sendCommand = (path: string, args?: OSCSomeArguments): void => {

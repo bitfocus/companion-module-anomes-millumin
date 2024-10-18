@@ -12,7 +12,7 @@ interface v2Action {
 export const v2Actions: v2Action = {
 	Action_LaunchNextColumn: {
 		oldActionId: '/millumin/action/launchNextColumn',
-		newActionId: ActionId.Action_LaunchNextColumn,
+		newActionId: ActionId.LAUNCH_NEXT_COLUMN,
 		type: 'GlobalActions',
 	},
 }

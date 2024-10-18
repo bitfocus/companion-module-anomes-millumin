@@ -1,4 +1,4 @@
-import { CompanionVariableDefinition, CompanionVariableValues } from '@companion-module/base'
+import {CompanionVariableDefinition, CompanionVariableValues} from '@companion-module/base'
 import { MilluminConfig } from './config'
 import { InstanceBaseExt } from './utils'
 
@@ -8,15 +8,19 @@ export function updateVariables(instance: InstanceBaseExt<MilluminConfig>): void
 	variables['currentColumnName'] = instance.currentColumnName
 	variables['previousColumnName'] = instance.previousColumnName
 	variables['nextColumnName'] = instance.nextColumnName
-	variables['timeLayerElapsedTime'] = instance.timeLayerElapsedTime
-	variables['timeLayerDuration'] = instance.timeLayerDuration
-	if (0 < instance.timeLayerDuration) {
-		variables['timeLayerRemainingTime'] = instance.timeLayerDuration - instance.timeLayerElapsedTime
-		variables['timeLayerProgress'] = instance.timeLayerElapsedTime / instance.timeLayerDuration
-	} else {
-		variables['timeLayerRemainingTime'] = 0
-		variables['timeLayerProgress'] = 0
+	for (const mediaLayerName in instance.mediaLayers) {
+		const mediaLayer = instance.mediaLayers[mediaLayerName]
+		variables[`${mediaLayerName}_timeLayerElapsedTime`] = mediaLayer.timeLayerElapsedTime
+		variables[`${mediaLayerName}_timeLayerDuration`] = mediaLayer.timeLayerDuration
+		if (0 < mediaLayer.timeLayerDuration) {
+			variables[`${mediaLayerName}_timeLayerRemainingTime`] = mediaLayer.timeLayerDuration - mediaLayer.timeLayerElapsedTime
+			variables[`${mediaLayerName}_timeLayerProgress`] = mediaLayer.timeLayerElapsedTime / mediaLayer.timeLayerDuration
+		} else {
+			variables[`${mediaLayerName}_timeLayerRemainingTime`] = 0
+			variables[`${mediaLayerName}_timeLayerProgress`] = 0
+		}
 	}
+
 	instance.setVariableValues(variables)
 }
 
@@ -26,11 +30,13 @@ export function initVariables(instance: InstanceBaseExt<MilluminConfig>): void {
 		{ name: 'Current Column Name', variableId: 'currentColumnName' },
 		{ name: 'Previous Column Name', variableId: 'previousColumnName' },
 		{ name: 'Next Column Name', variableId: 'nextColumnName' },
-		{ name: 'Time Layer / Elapsed Time', variableId: 'timeLayerElapsedTime' },
-		{ name: 'Time Layer / Duration', variableId: 'timeLayerDuration' },
-		{ name: 'Time Layer / Remaining Time', variableId: 'timeLayerRemainingTime' },
-		{ name: 'Time Layer / Progress', variableId: 'timeLayerProgress' },
 	])
+	for (const mediaLayerName in instance.mediaLayers) {
+		globalSettings.add({ name: `${mediaLayerName} / Time Layer / Elapsed Time`, variableId: `${mediaLayerName}_timeLayerElapsedTime` })
+		globalSettings.add({ name: `${mediaLayerName} / Time Layer / Duration`, variableId: `${mediaLayerName}_timeLayerDuration` })
+		globalSettings.add({ name: `${mediaLayerName} / Time Layer / Remaining Time`, variableId: `${mediaLayerName}_timeLayerRemainingTime` })
+		globalSettings.add({ name: `${mediaLayerName} / Time Layer / Progress`, variableId: `${mediaLayerName}_timeLayerProgress` })
+	}
 	const filteredVariables = [...globalSettings]
 	instance.setVariableDefinitions(filteredVariables)
 }

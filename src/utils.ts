@@ -43,6 +43,12 @@ export const options: Options = {
 	},
 }
 
+export interface MediaLayer {
+	timeLayerElapsedTime: any
+	timeLayerDuration: any
+	timeLayerMediaIndex: any
+}
+
 export interface InstanceBaseExt<TConfig> extends InstanceBase<TConfig> {
 	config: TConfig
 	OSC: any
@@ -51,10 +57,9 @@ export interface InstanceBaseExt<TConfig> extends InstanceBase<TConfig> {
 	currentColumnName: any
 	previousColumnName: any
 	nextColumnName: any
-	timeLayerElapsedTime: any
-	timeLayerDuration: any
+	mediaLayers: { [id: string]: MediaLayer }
 
-	InitVariables(): void
-	UpdateVariablesValues(): void
-	ReceiveOSCResponse(data: OSCResponse): void
+	initVariables(): void
+	updateVariablesValues(): void
+	receiveOSCResponse(data: OSCResponse): void
 }
