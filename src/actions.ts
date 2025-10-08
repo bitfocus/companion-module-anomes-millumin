@@ -169,7 +169,7 @@ export function getActions(instance: InstanceBaseExt<MilluminConfig>): Companion
 			},
 		},
 		[ActionId.SELECT_LAYER_BY_NAME]: {
-			name: 'Select Layer By Index',
+			name: 'Select Layer By Name',
 			options: [options.name],
 			callback: (action): void => {
 				if (instance.OSC) instance.OSC.sendCommand('/action/selectLayer', [{ type: 's', value: action.options.name }])
@@ -183,7 +183,7 @@ export function getActions(instance: InstanceBaseExt<MilluminConfig>): Companion
 			},
 		},
 		[ActionId.SELECT_LIGHT_BY_NAME]: {
-			name: 'Select Light By Index',
+			name: 'Select Light By Name',
 			options: [options.name],
 			callback: (action): void => {
 				if (instance.OSC) instance.OSC.sendCommand('/action/selectLight', [{ type: 's', value: action.options.name }])
