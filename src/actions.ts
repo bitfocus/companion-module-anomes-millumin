@@ -169,7 +169,7 @@ export function getActions(instance: InstanceBaseExt<MilluminConfig>): Companion
 			},
 		},
 		[ActionId.SELECT_LAYER_BY_NAME]: {
-			name: 'Select Layer By Index',
+			name: 'Select Layer By Name',
 			options: [options.name],
 			callback: (action): void => {
 				if (instance.OSC) instance.OSC.sendCommand('/action/selectLayer', [{ type: 's', value: action.options.name }])
@@ -183,7 +183,7 @@ export function getActions(instance: InstanceBaseExt<MilluminConfig>): Companion
 			},
 		},
 		[ActionId.SELECT_LIGHT_BY_NAME]: {
-			name: 'Select Light By Index',
+			name: 'Select Light By Name',
 			options: [options.name],
 			callback: (action): void => {
 				if (instance.OSC) instance.OSC.sendCommand('/action/selectLight', [{ type: 's', value: action.options.name }])
@@ -282,73 +282,280 @@ export function getActions(instance: InstanceBaseExt<MilluminConfig>): Companion
 		},
 
 		[ActionId.SELECTED_LAYER_RESTART_MEDIA]: {
-			name: 'Selected Layer / Restart Media',
-			options: [],
-			callback: (): void => {
-				if (instance.OSC) instance.OSC.sendCommand('/selectedLayer/startMedia', [])
-			},
+	name: 'Layer / Restart Media',
+	options: [
+		{
+			type: 'dropdown',
+			label: 'Layer Target',
+			id: 'layerTarget',
+			default: 'selected',
+			choices: [
+				{ id: 'selected', label: 'Selected Layer' },
+				{ id: 'custom', label: 'Layer Name' }
+			]
 		},
-		[ActionId.SELECTED_LAYER_START_MEDIA_BY_INDEX]: {
-			name: 'Selected Layer / Start Media by Index',
-			options: [options.index],
-			callback: (action): void => {
-				if (instance.OSC)
-					instance.OSC.sendCommand('/selectedLayer/startMedia', [{ type: 'i', value: action.options.index }])
-			},
+		{
+			type: 'textinput',
+			label: 'Layer Name',
+			id: 'customLayerName',
+			default: '',
+			isVisible: (options) => options.layerTarget === 'custom'
+		}
+	],
+	callback: (action): void => {
+		if (instance.OSC) {
+			const layerPath = action.options.layerTarget === 'selected' 
+				? 'selectedLayer'
+				: action.options.customLayerName;
+			instance.OSC.sendCommand(`/${layerPath}/startMedia`, [])
+		}
+	},
+},
+[ActionId.SELECTED_LAYER_START_MEDIA_BY_INDEX]: {
+	name: 'Layer / Start Media by Index',
+	options: [
+		{
+			type: 'dropdown',
+			label: 'Layer Target',
+			id: 'layerTarget',
+			default: 'selected',
+			choices: [
+				{ id: 'selected', label: 'Selected Layer' },
+				{ id: 'custom', label: 'Layer Name' }
+			]
 		},
-		[ActionId.SELECTED_LAYER_START_MEDIA_BY_NAME]: {
-			name: 'Selected Layer / Start Media by Name',
-			options: [options.name],
-			callback: (action): void => {
-				if (instance.OSC)
-					instance.OSC.sendCommand('/selectedLayer/startMedia', [{ type: 's', value: action.options.name }])
-			},
+		{
+			type: 'textinput',
+			label: 'Layer Name',
+			id: 'customLayerName',
+			default: '',
+			isVisible: (options) => options.layerTarget === 'custom'
 		},
-		[ActionId.SELECTED_LAYER_PAUSE_MEDIA]: {
-			name: 'Selected Layer / Pause Media',
-			options: [],
-			callback: (): void => {
-				if (instance.OSC) instance.OSC.sendCommand('/selectedLayer/pauseMedia', [])
-			},
+		options.index
+	],
+	callback: (action): void => {
+		if (instance.OSC) {
+			const layerPath = action.options.layerTarget === 'selected' 
+				? 'selectedLayer'
+				: action.options.customLayerName;
+			instance.OSC.sendCommand(`/${layerPath}/startMedia`, [{ type: 'i', value: action.options.index }])
+		}
+	},
+},
+[ActionId.SELECTED_LAYER_START_MEDIA_BY_NAME]: {
+	name: 'Layer / Start Media by Name',
+	options: [
+		{
+			type: 'dropdown',
+			label: 'Layer Target',
+			id: 'layerTarget',
+			default: 'selected',
+			choices: [
+				{ id: 'selected', label: 'Selected Layer' },
+				{ id: 'custom', label: 'Layer Name' }
+			]
 		},
-		[ActionId.SELECTED_LAYER_PLAY_OR_PAUSE_MEDIA]: {
-			name: 'Selected Layer / Start or Pause Media',
-			options: [],
-			callback: (): void => {
-				if (instance.OSC) instance.OSC.sendCommand('/selectedLayer/startOrPauseMedia', [])
-			},
+		{
+			type: 'textinput',
+			label: 'Layer Name',
+			id: 'customLayerName',
+			default: '',
+			isVisible: (options) => options.layerTarget === 'custom'
 		},
-		[ActionId.SELECTED_LAYER_STOP_MEDIA]: {
-			name: 'Selected Layer / Stop Media',
-			options: [],
-			callback: (): void => {
-				if (instance.OSC) instance.OSC.sendCommand('/selectedLayer/stopMedia', [])
-			},
+		options.name
+	],
+	callback: (action): void => {
+		if (instance.OSC) {
+			const layerPath = action.options.layerTarget === 'selected' 
+				? 'selectedLayer'
+				: action.options.customLayerName;
+			instance.OSC.sendCommand(`/${layerPath}/startMedia`, [{ type: 's', value: action.options.name }])
+		}
+	},
+},
+[ActionId.SELECTED_LAYER_PAUSE_MEDIA]: {
+	name: 'Layer / Pause Media',
+	options: [
+		{
+			type: 'dropdown',
+			label: 'Layer Target',
+			id: 'layerTarget',
+			default: 'selected',
+			choices: [
+				{ id: 'selected', label: 'Selected Layer' },
+				{ id: 'custom', label: 'Layer Name' }
+			]
 		},
-		[ActionId.SELECTED_LAYER_GO_TO_MEDIA_TIME]: {
-			name: 'Selected Layer / Go to Media Time',
-			options: [options.time],
-			callback: (action): void => {
-				if (instance.OSC)
-					instance.OSC.sendCommand('/selectedLayer/media/time', [{ type: 'f', value: action.options.time }])
-			},
+		{
+			type: 'textinput',
+			label: 'Layer Name',
+			id: 'customLayerName',
+			default: '',
+			isVisible: (options) => options.layerTarget === 'custom'
+		}
+	],
+	callback: (action): void => {
+		if (instance.OSC) {
+			const layerPath = action.options.layerTarget === 'selected' 
+				? 'selectedLayer'
+				: action.options.customLayerName;
+			instance.OSC.sendCommand(`/${layerPath}/pauseMedia`, [])
+		}
+	},
+},
+[ActionId.SELECTED_LAYER_PLAY_OR_PAUSE_MEDIA]: {
+	name: 'Layer / Start or Pause Media',
+	options: [
+		{
+			type: 'dropdown',
+			label: 'Layer Target',
+			id: 'layerTarget',
+			default: 'selected',
+			choices: [
+				{ id: 'selected', label: 'Selected Layer' },
+				{ id: 'custom', label: 'Layer Name' }
+			]
 		},
-		[ActionId.SELECTED_LAYER_GO_TO_NORMALIZED_TIME]: {
-			name: 'Selected Layer / Go to Media Normalized Time',
-			options: [options.value],
-			callback: (action): void => {
-				if (instance.OSC)
-					instance.OSC.sendCommand('/selectedLayer/media/normalizedTime', [{ type: 'f', value: action.options.value }])
-			},
+		{
+			type: 'textinput',
+			label: 'Layer Name',
+			id: 'customLayerName',
+			default: '',
+			isVisible: (options) => options.layerTarget === 'custom'
+		}
+	],
+	callback: (action): void => {
+		if (instance.OSC) {
+			const layerPath = action.options.layerTarget === 'selected' 
+				? 'selectedLayer'
+				: action.options.customLayerName;
+			instance.OSC.sendCommand(`/${layerPath}/startOrPauseMedia`, [])
+		}
+	},
+},
+[ActionId.SELECTED_LAYER_STOP_MEDIA]: {
+	name: 'Layer / Stop Media',
+	options: [
+		{
+			type: 'dropdown',
+			label: 'Layer Target',
+			id: 'layerTarget',
+			default: 'selected',
+			choices: [
+				{ id: 'selected', label: 'Selected Layer' },
+				{ id: 'custom', label: 'Layer Name' }
+			]
 		},
-		[ActionId.SELECTED_LAYER_SET_MEDIA_SPEED]: {
-			name: 'Selected Layer / Set Media Speed',
-			options: [options.value],
-			callback: (action): void => {
-				if (instance.OSC)
-					instance.OSC.sendCommand('/selectedLayer/media/speed', [{ type: 'f', value: action.options.value }])
-			},
+		{
+			type: 'textinput',
+			label: 'Layer Name',
+			id: 'customLayerName',
+			default: '',
+			isVisible: (options) => options.layerTarget === 'custom'
+		}
+	],
+	callback: (action): void => {
+		if (instance.OSC) {
+			const layerPath = action.options.layerTarget === 'selected' 
+				? 'selectedLayer'
+				: action.options.customLayerName;
+			instance.OSC.sendCommand(`/${layerPath}/stopMedia`, [])
+		}
+	},
+},
+[ActionId.SELECTED_LAYER_GO_TO_MEDIA_TIME]: {
+	name: 'Layer / Go to Media Time',
+	options: [
+		{
+			type: 'dropdown',
+			label: 'Layer Target',
+			id: 'layerTarget',
+			default: 'selected',
+			choices: [
+				{ id: 'selected', label: 'Selected Layer' },
+				{ id: 'custom', label: 'Layer Name' }
+			]
 		},
+		{
+			type: 'textinput',
+			label: 'Layer Name',
+			id: 'customLayerName',
+			default: '',
+			isVisible: (options) => options.layerTarget === 'custom'
+		},
+		options.time
+	],
+	callback: (action): void => {
+		if (instance.OSC) {
+			const layerPath = action.options.layerTarget === 'selected' 
+				? 'selectedLayer'
+				: action.options.customLayerName;
+			instance.OSC.sendCommand(`/${layerPath}/media/time`, [{ type: 'f', value: action.options.time }])
+		}
+	},
+},
+[ActionId.SELECTED_LAYER_GO_TO_NORMALIZED_TIME]: {
+	name: 'Layer / Go to Media Normalized Time',
+	options: [
+		{
+			type: 'dropdown',
+			label: 'Layer Target',
+			id: 'layerTarget',
+			default: 'selected',
+			choices: [
+				{ id: 'selected', label: 'Selected Layer' },
+				{ id: 'custom', label: 'Layer Name' }
+			]
+		},
+		{
+			type: 'textinput',
+			label: 'Layer Name',
+			id: 'customLayerName',
+			default: '',
+			isVisible: (options) => options.layerTarget === 'custom'
+		},
+		options.value
+	],
+	callback: (action): void => {
+		if (instance.OSC) {
+			const layerPath = action.options.layerTarget === 'selected' 
+				? 'selectedLayer'
+				: action.options.customLayerName;
+			instance.OSC.sendCommand(`/${layerPath}/media/normalizedTime`, [{ type: 'f', value: action.options.value }])
+		}
+	},
+},
+[ActionId.SELECTED_LAYER_SET_MEDIA_SPEED]: {
+	name: 'Layer / Set Media Speed',
+	options: [
+		{
+			type: 'dropdown',
+			label: 'Layer Target',
+			id: 'layerTarget',
+			default: 'selected',
+			choices: [
+				{ id: 'selected', label: 'Selected Layer' },
+				{ id: 'custom', label: 'Layer Name' }
+			]
+		},
+		{
+			type: 'textinput',
+			label: 'Layer Name',
+			id: 'customLayerName',
+			default: '',
+			isVisible: (options) => options.layerTarget === 'custom'
+		},
+		options.value
+	],
+	callback: (action): void => {
+		if (instance.OSC) {
+			const layerPath = action.options.layerTarget === 'selected' 
+				? 'selectedLayer'
+				: action.options.customLayerName;
+			instance.OSC.sendCommand(`/${layerPath}/media/speed`, [{ type: 'f', value: action.options.value }])
+		}
+	},
+},
 	}
 
 	return actions
