@@ -155,7 +155,7 @@ export function getActions(instance: InstanceBaseExt<MilluminConfig>): Companion
 			},
 		},
 		[ActionId.SELECT_BOARD_BY_NAME]: {
-			name: 'Select Board By Index',
+			name: 'Select Board By Name',
 			options: [options.name],
 			callback: (action): void => {
 				if (instance.OSC) instance.OSC.sendCommand('/action/selectBoard', [{ type: 's', value: action.options.name }])
