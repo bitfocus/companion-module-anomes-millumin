@@ -8,6 +8,8 @@ export interface Options {
 	name: EnforceDefault<CompanionInputFieldTextInput, string>
 	time: EnforceDefault<CompanionInputFieldNumber, number>
 	value: EnforceDefault<CompanionInputFieldNumber, number>
+	oscPath: EnforceDefault<CompanionInputFieldTextInput, string>
+	oscArgs: EnforceDefault<CompanionInputFieldTextInput, string>
 }
 
 export const options: Options = {
@@ -40,6 +42,20 @@ export const options: Options = {
 		default: 0,
 		min: -65535,
 		max: 65535,
+	},
+	oscPath: {
+		type: 'textinput',
+		label: 'OSC Path',
+		id: 'oscPath',
+		default: '/millumin/action/custom',
+		tooltip: 'Enter the OSC path (e.g., /millumin/action/custom)',
+	},
+	oscArgs: {
+		type: 'textinput',
+		label: 'OSC Arguments',
+		id: 'oscArgs',
+		default: '',
+		tooltip: 'Optional: Enter arguments as comma-separated values with type prefix (e.g., i:1,s:hello,f:0.5)',
 	},
 }
 

@@ -44,6 +44,7 @@ export enum ActionId {
 	SELECTED_LAYER_GO_TO_MEDIA_TIME = 'Action_SelectedLayer_GoToMediaTime',
 	SELECTED_LAYER_GO_TO_NORMALIZED_TIME = 'Action_SelectedLayer_GoToMediaNormalizedTime',
 	SELECTED_LAYER_SET_MEDIA_SPEED = 'Action_SelectedLayer_SetMediaSpeed',
+	CUSTOM_OSC = 'Action_CustomOSC',
 }
 
 export function getActions(instance: InstanceBaseExt<MilluminConfig>): CompanionActionDefinitions {
@@ -347,6 +348,62 @@ export function getActions(instance: InstanceBaseExt<MilluminConfig>): Companion
 			callback: (action): void => {
 				if (instance.OSC)
 					instance.OSC.sendCommand('/selectedLayer/media/speed', [{ type: 'f', value: action.options.value }])
+			},
+		},
+		[ActionId.CUSTOM_OSC]: {
+			name: 'Send Custom OSC Command',
+			description: 'Send a custom OSC command to Millumin for use with the Interactions panel',
+			options: [options.oscPath, options.oscArgs],
+			callback: (action): void => {
+				if (!instance.OSC) return
+
+				const path = action.options.oscPath as string
+				const argsString = action.options.oscArgs as string
+
+				// Parse the arguments string if provided
+				const args = []
+				if (argsString && argsString.trim() !== '') {
+					const argParts = argsString.split(',')
+					for (const part of argParts) {
+						const trimmed = part.trim()
+						if (trimmed === '') continue
+
+						// Check if the argument has a type prefix (e.g., "i:1", "s:hello", "f:0.5")
+						const colonIndex = trimmed.indexOf(':')
+						if (colonIndex > 0) {
+							const type = trimmed.substring(0, colonIndex).toLowerCase()
+							const valueStr = trimmed.substring(colonIndex + 1)
+
+							if (type === 'i') {
+								// Integer
+								args.push({ type: 'i', value: parseInt(valueStr, 10) })
+							} else if (type === 's') {
+								// String
+								args.push({ type: 's', value: valueStr })
+							} else if (type === 'f') {
+								// Float
+								args.push({ type: 'f', value: parseFloat(valueStr) })
+							} else {
+								instance.log('warn', `Unknown OSC argument type: ${type}`)
+							}
+						} else {
+							// No type prefix, try to infer the type
+							if (!isNaN(Number(trimmed))) {
+								// It's a number
+								if (trimmed.includes('.')) {
+									args.push({ type: 'f', value: parseFloat(trimmed) })
+								} else {
+									args.push({ type: 'i', value: parseInt(trimmed, 10) })
+								}
+							} else {
+								// It's a string
+								args.push({ type: 's', value: trimmed })
+							}
+						}
+					}
+				}
+
+				instance.OSC.sendCommand(path, args)
 			},
 		},
 	}
