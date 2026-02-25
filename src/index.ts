@@ -87,7 +87,7 @@ class MilluminInstance extends InstanceBase<MilluminConfig> implements InstanceB
 
 		this.setActionDefinitions(getActions(this))
 		this.setFeedbackDefinitions(getFeedbacks(this))
-		this.setPresetDefinitions(GetPresetList())
+		this.setPresetDefinitions(GetPresetList(this))
 	}
 
 	public initVariables(): void {
