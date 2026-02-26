@@ -13,7 +13,7 @@ const green = combineRgb(0,255,0);
 const orange = combineRgb(255,140,0);
 const red = combineRgb(255,0,0);
 
-// @ts-ignore
+
 export function getFeedbacks(instance: InstanceBaseExt<MilluminConfig>): CompanionFeedbackDefinitions {
 	let trackedLayers: DropdownChoice[] = []
 

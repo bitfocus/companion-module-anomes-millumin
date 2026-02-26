@@ -100,15 +100,15 @@ class MilluminInstance extends InstanceBase<MilluminConfig> implements InstanceB
 
 	public receiveOSCResponse(data: OSCResponse): void {
 		if (data.address.toString() == '/millumin/board/launchedColumn' && 0 < data.args.length) {
-			this.currentColumnIndex = data.args[0].value
+			this.currentColumnIndex = Number(data.args[0].value)
 			if (1 < data.args.length) {
-				this.currentColumnName = data.args[1].value
+				this.currentColumnName = String(data.args[1].value)
 			} else {
 				this.currentColumnName = ''
 			}
 			this.updateVariablesValues()
 		} else if (data.address.toString() == '/millumin/board/stoppedColumn' && 0 < data.args.length) {
-			if (this.currentColumnIndex == data.args[0].value) {
+			if (this.currentColumnIndex == Number(data.args[0].value)) {
 				this.currentColumnIndex = 0
 				this.currentColumnName = ''
 				this.previousColumnName = ''
@@ -120,8 +120,8 @@ class MilluminInstance extends InstanceBase<MilluminConfig> implements InstanceB
 			6 <= data.args.length &&
 			data.args[0].value == 'board/launchedColumn'
 		) {
-			this.previousColumnName = data.args[2].value
-			this.nextColumnName = data.args[4].value
+			this.previousColumnName = String(data.args[2].value)
+			this.nextColumnName = String(data.args[4].value)
 			this.updateVariablesValues()
 		} else if (data.address.startsWith('/millumin/index:1/media')) {
 			this.updateMediaLayer(data.address, 'firstByIndex', data.args)
@@ -141,17 +141,17 @@ class MilluminInstance extends InstanceBase<MilluminConfig> implements InstanceB
 		}
 	}
 
-	public updateMediaLayer(address: string, layerName: string, args: { type: string, value: any }[]) {
+	public updateMediaLayer(address: string, layerName: string, args: { type: string, value: string | number | boolean }[]) {
 		if (address.endsWith('/media/time')
 			&& 2 <= args.length) {
-			this.mediaLayers[layerName].elapsedTime = args[0].value
-			this.mediaLayers[layerName].duration = args[1].value
+			this.mediaLayers[layerName].elapsedTime = Number(args[0].value)
+			this.mediaLayers[layerName].duration = Number(args[1].value)
 		} else if (address.endsWith('/mediaStarted')
 			&& 1 <= args.length) {
-			this.mediaLayers[layerName].mediaIndex = args[1].value
+			this.mediaLayers[layerName].mediaIndex = Number(args[1].value)
 			if (3 <= args.length) {
 				this.mediaLayers[layerName].elapsedTime = 0
-				this.mediaLayers[layerName].duration = args[2].value
+				this.mediaLayers[layerName].duration = Number(args[2].value)
 			} else {
 				this.mediaLayers[layerName].elapsedTime = 0
 				this.mediaLayers[layerName].duration = 0

@@ -1,5 +1,6 @@
 import { CompanionInputFieldNumber, CompanionInputFieldTextInput, InstanceBase } from '@companion-module/base'
-import { OSCResponse } from './osc'
+import { MilluminConfig } from './config'
+import { OSC as OSC_Class, OSCResponse } from './osc'
 
 type EnforceDefault<T, U> = Omit<T, 'default'> & { default: U }
 
@@ -73,7 +74,7 @@ export const options: Options = {
  * Returns the parsed number, or NaN if invalid.
  */
 export async function parseVariableNumber(
-	instance: InstanceBaseExt<any>,
+	instance: InstanceBaseExt<MilluminConfig>,
 	action: { options: { [key: string]: any } },
 	key: string,
 ): Promise<number> {
@@ -88,7 +89,7 @@ export async function parseVariableNumber(
  * Returns the parsed integer, or NaN if invalid.
  */
 export async function parseVariableInt(
-	instance: InstanceBaseExt<any>,
+	instance: InstanceBaseExt<MilluminConfig>,
 	action: { options: { [key: string]: any } },
 	key: string,
 ): Promise<number> {
@@ -102,7 +103,7 @@ export async function parseVariableInt(
  * Resolve a variable-aware string option.
  */
 export async function parseVariableString(
-	instance: InstanceBaseExt<any>,
+	instance: InstanceBaseExt<MilluminConfig>,
 	action: { options: { [key: string]: any } },
 	key: string,
 ): Promise<string> {
@@ -111,19 +112,19 @@ export async function parseVariableString(
 }
 
 export interface MediaLayer {
-	elapsedTime: any
-	duration: any
-	mediaIndex: any
+	elapsedTime: number
+	duration: number
+	mediaIndex: number
 }
 
 export interface InstanceBaseExt<TConfig> extends InstanceBase<TConfig> {
 	config: TConfig
-	OSC: any
+	OSC: OSC_Class | null
 
-	currentColumnIndex: any
-	currentColumnName: any
-	previousColumnName: any
-	nextColumnName: any
+	currentColumnIndex: number
+	currentColumnName: string | null
+	previousColumnName: string | null
+	nextColumnName: string | null
 	mediaLayers: { [id: string]: MediaLayer }
 
 	initVariables(): void

@@ -45,6 +45,7 @@ export enum ActionId {
 	SELECTED_LAYER_GO_TO_MEDIA_TIME = 'Action_SelectedLayer_GoToMediaTime',
 	SELECTED_LAYER_GO_TO_NORMALIZED_TIME = 'Action_SelectedLayer_GoToMediaNormalizedTime',
 	SELECTED_LAYER_SET_MEDIA_SPEED = 'Action_SelectedLayer_SetMediaSpeed',
+	SELECTED_LAYER_JOG_MEDIA_TIME = 'Action_SelectedLayer_JogMediaTime',
 }
 
 export function getActions(instance: InstanceBaseExt<MilluminConfig>): CompanionActionDefinitions {
@@ -408,6 +409,30 @@ export function getActions(instance: InstanceBaseExt<MilluminConfig>): Companion
 				const val = await parseVariableNumber(instance, action, 'value')
 				if (!isNaN(val) && instance.OSC)
 					instance.OSC.sendCommand('/selectedLayer/media/speed', [{ type: 'f', value: val }])
+			},
+		},
+		[ActionId.SELECTED_LAYER_JOG_MEDIA_TIME]: {
+			name: 'Selected Layer / Jog Media Time',
+			description: 'Jog the selected layer media time by a relative number of seconds using tracked layer data',
+			options: [
+				options.timeVar,
+				{
+					type: 'textinput',
+					label: 'Tracked Layer',
+					id: 'layer',
+					default: 'firstByIndex',
+					useVariables: true,
+				},
+			],
+			callback: async (action): Promise<void> => {
+				const time = await parseVariableNumber(instance, action, 'time')
+				if (isNaN(time)) return
+				const layerKey = await parseVariableString(instance, action, 'layer')
+				const mediaLayer = instance.mediaLayers[layerKey]
+				if (!mediaLayer || mediaLayer.duration === 0) return
+				const newTime = mediaLayer.elapsedTime + time
+				if (instance.OSC)
+					instance.OSC.sendCommand('/selectedLayer/media/time', [{ type: 'f', value: newTime }])
 			},
 		},
 	}

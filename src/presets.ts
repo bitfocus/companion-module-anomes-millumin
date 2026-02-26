@@ -585,6 +585,181 @@ export function GetPresetList(instance: InstanceBaseExt<MilluminConfig>): Compan
 				},
 			],
 		}
+
+		// Build the select-layer action for this tracked layer
+		const selectLayerAction = layer.varName === 'firstByIndex'
+			? { actionId: ActionId.SELECT_LAYER_BY_INDEX, options: { index: '1' } }
+			: { actionId: ActionId.SELECT_LAYER_BY_NAME, options: { name: layer.varName } }
+
+		// Layer transport: Play or Pause
+		presets[`layer_${safeId}_play_pause`] = {
+			type: 'button',
+			category: cat,
+			name: `${layer.displayName} / Play or Pause`,
+			style: {
+				text: `${layer.displayName}\n▶⏸`,
+				size: 'auto',
+				color: White,
+				bgcolor: DarkGrey,
+			},
+			steps: [
+				{
+					down: [
+						selectLayerAction,
+						{ actionId: ActionId.SELECTED_LAYER_PLAY_OR_PAUSE_MEDIA, options: {} },
+					],
+					up: [],
+				},
+			],
+			feedbacks: [],
+		}
+
+		// Layer transport: Pause
+		presets[`layer_${safeId}_pause`] = {
+			type: 'button',
+			category: cat,
+			name: `${layer.displayName} / Pause`,
+			style: {
+				text: `${layer.displayName}\n⏸\nPause`,
+				size: 'auto',
+				color: White,
+				bgcolor: Orange,
+			},
+			steps: [
+				{
+					down: [
+						selectLayerAction,
+						{ actionId: ActionId.SELECTED_LAYER_PAUSE_MEDIA, options: {} },
+					],
+					up: [],
+				},
+			],
+			feedbacks: [],
+		}
+
+		// Layer transport: Restart
+		presets[`layer_${safeId}_restart`] = {
+			type: 'button',
+			category: cat,
+			name: `${layer.displayName} / Restart`,
+			style: {
+				text: `${layer.displayName}\n⏮\nRestart`,
+				size: 'auto',
+				color: White,
+				bgcolor: DarkGrey,
+			},
+			steps: [
+				{
+					down: [
+						selectLayerAction,
+						{ actionId: ActionId.SELECTED_LAYER_RESTART_MEDIA, options: {} },
+					],
+					up: [],
+				},
+			],
+			feedbacks: [],
+		}
+
+		// Layer transport: Stop
+		presets[`layer_${safeId}_stop`] = {
+			type: 'button',
+			category: cat,
+			name: `${layer.displayName} / Stop`,
+			style: {
+				text: `${layer.displayName}\nSTOP`,
+				size: 'auto',
+				color: White,
+				bgcolor: Red,
+			},
+			steps: [
+				{
+					down: [
+						selectLayerAction,
+						{ actionId: ActionId.SELECTED_LAYER_STOP_MEDIA, options: {} },
+					],
+					up: [],
+				},
+			],
+			feedbacks: [],
+		}
+
+		// Layer transport: Jog -10s
+		presets[`layer_${safeId}_jog_minus_10`] = {
+			type: 'button',
+			category: cat,
+			name: `${layer.displayName} / Jog -10s`,
+			style: {
+				text: `${layer.displayName}\n◀◀\n10s`,
+				size: 'auto',
+				color: White,
+				bgcolor: DarkGrey,
+			},
+			steps: [
+				{
+					down: [
+						selectLayerAction,
+						{ actionId: ActionId.SELECTED_LAYER_JOG_MEDIA_TIME, options: { time: '-10', layer: layer.varName } },
+					],
+					up: [],
+				},
+			],
+			feedbacks: [],
+		}
+
+		// Layer transport: Jog +10s
+		presets[`layer_${safeId}_jog_plus_10`] = {
+			type: 'button',
+			category: cat,
+			name: `${layer.displayName} / Jog +10s`,
+			style: {
+				text: `${layer.displayName}\n▶▶\n10s`,
+				size: 'auto',
+				color: White,
+				bgcolor: DarkGrey,
+			},
+			steps: [
+				{
+					down: [
+						selectLayerAction,
+						{ actionId: ActionId.SELECTED_LAYER_JOG_MEDIA_TIME, options: { time: '10', layer: layer.varName } },
+					],
+					up: [],
+				},
+			],
+			feedbacks: [],
+		}
+
+		// Layer countdown jumps
+		const layerCountdownJumps = [
+			{ seconds: 60, label: `${layer.displayName}\nGOTO\n1:00` },
+			{ seconds: 30, label: `${layer.displayName}\nGOTO\n:30` },
+			{ seconds: 15, label: `${layer.displayName}\nGOTO\n:15` },
+			{ seconds: 10, label: `${layer.displayName}\nGOTO\n:10` },
+		]
+
+		for (const jump of layerCountdownJumps) {
+			presets[`layer_${safeId}_goto_end_${jump.seconds}`] = {
+				type: 'button',
+				category: cat,
+				name: `${layer.displayName} / Go to ${jump.seconds}s from End`,
+				style: {
+					text: jump.label,
+					size: 'auto',
+					color: White,
+					bgcolor: DarkGrey,
+				},
+				steps: [
+					{
+						down: [
+							selectLayerAction,
+							{ actionId: ActionId.SELECTED_LAYER_GO_TO_MEDIA_TIME, options: { time: String(-jump.seconds) } },
+						],
+						up: [],
+					},
+				],
+				feedbacks: [],
+			}
+		}
 	}
 
 	return presets

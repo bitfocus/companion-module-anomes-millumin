@@ -7,7 +7,7 @@ export interface OSCResponse {
 	address: string
 	args: {
 		type: string
-		value: any
+		value: string | number | boolean
 	}[]
 }
 
@@ -16,6 +16,7 @@ export class OSC {
 	private oscHost = ''
 	private oscTXPort = 5000
 	private oscRXPort = 8000
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any -- osc.UDPPort has no type definitions
 	private udpPort: any
 
 	constructor(instance: InstanceBaseExt<MilluminConfig>) {

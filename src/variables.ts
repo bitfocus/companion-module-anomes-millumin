@@ -21,9 +21,9 @@ function secondsToTimecode(totalSeconds: number): string {
 export function updateVariables(instance: InstanceBaseExt<MilluminConfig>): void {
 	const variables: CompanionVariableValues = {}
 	variables['currentColumnIndex'] = instance.currentColumnIndex
-	variables['currentColumnName'] = instance.currentColumnName
-	variables['previousColumnName'] = instance.previousColumnName
-	variables['nextColumnName'] = instance.nextColumnName
+	variables['currentColumnName'] = instance.currentColumnName ?? undefined
+	variables['previousColumnName'] = instance.previousColumnName ?? undefined
+	variables['nextColumnName'] = instance.nextColumnName ?? undefined
 	for (const mediaLayerName in instance.mediaLayers) {
 		const mediaLayer = instance.mediaLayers[mediaLayerName]
 		const remaining = 0 < mediaLayer.duration ? mediaLayer.duration - mediaLayer.elapsedTime : 0
