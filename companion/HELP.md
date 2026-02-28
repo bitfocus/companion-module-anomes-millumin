@@ -1,4 +1,4 @@
-## Millumin 2, 3 and 4
+## Millumin 2, 3, 4 and 5
 Sends OSC commands to Millumin. Default port is 5000 but you can change that if needed in Millumin Interactions menu. Go to Interactions/Manage devices and from there OSC tab.
 
 ### Configuration
