@@ -38,7 +38,9 @@ All text input fields in actions support Companion variables for dynamic control
 * Go to Seconds from End
 * Go to Timeline Segment (by name)
 
-#### Selected Layer Media
+#### Layer Media
+All layer actions default to the currently selected layer in Millumin, but each includes a Layer Target dropdown to optionally specify a layer by name instead.
+
 * Restart Media
 * Start Media (by index or name)
 * Pause Media

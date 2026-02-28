@@ -1,6 +1,6 @@
 import { CompanionActionDefinition, CompanionActionDefinitions } from '@companion-module/base'
 import { MilluminConfig } from './config'
-import { InstanceBaseExt, options, parseVariableInt, parseVariableNumber, parseVariableString } from './utils'
+import { InstanceBaseExt, options, layerTargetOptions, resolveLayerPath, parseVariableInt, parseVariableNumber, parseVariableString } from './utils'
 
 export enum ActionId {
 	LAUNCH_OR_STOP_COLUMN_BY_INDEX = 'Action_LaunchOrStopColumn_ByIndex',
@@ -340,82 +340,92 @@ export function getActions(instance: InstanceBaseExt<MilluminConfig>): Companion
 		},
 
 		[ActionId.SELECTED_LAYER_RESTART_MEDIA]: {
-			name: 'Selected Layer / Restart Media',
-			options: [],
-			callback: (): void => {
-				if (instance.OSC) instance.OSC.sendCommand('/selectedLayer/startMedia', [])
+			name: 'Layer / Restart Media',
+			options: [...layerTargetOptions],
+			callback: async (action): Promise<void> => {
+				const layerPath = await resolveLayerPath(instance, action)
+				if (instance.OSC) instance.OSC.sendCommand(`/${layerPath}/startMedia`, [])
 			},
 		},
 		[ActionId.SELECTED_LAYER_START_MEDIA_BY_INDEX]: {
-			name: 'Selected Layer / Start Media by Index',
-			options: [options.indexVar],
+			name: 'Layer / Start Media by Index',
+			options: [...layerTargetOptions, options.indexVar],
 			callback: async (action): Promise<void> => {
+				const layerPath = await resolveLayerPath(instance, action)
 				const idx = await parseVariableInt(instance, action, 'index')
 				if (!isNaN(idx) && instance.OSC)
-					instance.OSC.sendCommand('/selectedLayer/startMedia', [{ type: 'i', value: idx }])
+					instance.OSC.sendCommand(`/${layerPath}/startMedia`, [{ type: 'i', value: idx }])
 			},
 		},
 		[ActionId.SELECTED_LAYER_START_MEDIA_BY_NAME]: {
-			name: 'Selected Layer / Start Media by Name',
-			options: [options.name],
+			name: 'Layer / Start Media by Name',
+			options: [...layerTargetOptions, options.name],
 			callback: async (action): Promise<void> => {
+				const layerPath = await resolveLayerPath(instance, action)
 				const name = await parseVariableString(instance, action, 'name')
 				if (instance.OSC)
-					instance.OSC.sendCommand('/selectedLayer/startMedia', [{ type: 's', value: name }])
+					instance.OSC.sendCommand(`/${layerPath}/startMedia`, [{ type: 's', value: name }])
 			},
 		},
 		[ActionId.SELECTED_LAYER_PAUSE_MEDIA]: {
-			name: 'Selected Layer / Pause Media',
-			options: [],
-			callback: (): void => {
-				if (instance.OSC) instance.OSC.sendCommand('/selectedLayer/pauseMedia', [])
+			name: 'Layer / Pause Media',
+			options: [...layerTargetOptions],
+			callback: async (action): Promise<void> => {
+				const layerPath = await resolveLayerPath(instance, action)
+				if (instance.OSC) instance.OSC.sendCommand(`/${layerPath}/pauseMedia`, [])
 			},
 		},
 		[ActionId.SELECTED_LAYER_PLAY_OR_PAUSE_MEDIA]: {
-			name: 'Selected Layer / Start or Pause Media',
-			options: [],
-			callback: (): void => {
-				if (instance.OSC) instance.OSC.sendCommand('/selectedLayer/startOrPauseMedia', [])
+			name: 'Layer / Start or Pause Media',
+			options: [...layerTargetOptions],
+			callback: async (action): Promise<void> => {
+				const layerPath = await resolveLayerPath(instance, action)
+				if (instance.OSC) instance.OSC.sendCommand(`/${layerPath}/startOrPauseMedia`, [])
 			},
 		},
 		[ActionId.SELECTED_LAYER_STOP_MEDIA]: {
-			name: 'Selected Layer / Stop Media',
-			options: [],
-			callback: (): void => {
-				if (instance.OSC) instance.OSC.sendCommand('/selectedLayer/stopMedia', [])
+			name: 'Layer / Stop Media',
+			options: [...layerTargetOptions],
+			callback: async (action): Promise<void> => {
+				const layerPath = await resolveLayerPath(instance, action)
+				if (instance.OSC) instance.OSC.sendCommand(`/${layerPath}/stopMedia`, [])
 			},
 		},
 		[ActionId.SELECTED_LAYER_GO_TO_MEDIA_TIME]: {
-			name: 'Selected Layer / Go to Media Time',
-			options: [options.timeVar],
+			name: 'Layer / Go to Media Time',
+			options: [...layerTargetOptions, options.timeVar],
 			callback: async (action): Promise<void> => {
+				const layerPath = await resolveLayerPath(instance, action)
 				const time = await parseVariableNumber(instance, action, 'time')
 				if (!isNaN(time) && instance.OSC)
-					instance.OSC.sendCommand('/selectedLayer/media/time', [{ type: 'f', value: time }])
+					instance.OSC.sendCommand(`/${layerPath}/media/time`, [{ type: 'f', value: time }])
 			},
 		},
 		[ActionId.SELECTED_LAYER_GO_TO_NORMALIZED_TIME]: {
-			name: 'Selected Layer / Go to Media Normalized Time',
-			options: [options.valueVar],
+			name: 'Layer / Go to Media Normalized Time',
+			options: [...layerTargetOptions, options.valueVar],
 			callback: async (action): Promise<void> => {
+				const layerPath = await resolveLayerPath(instance, action)
 				const val = await parseVariableNumber(instance, action, 'value')
 				if (!isNaN(val) && instance.OSC)
-					instance.OSC.sendCommand('/selectedLayer/media/normalizedTime', [{ type: 'f', value: val }])
+					instance.OSC.sendCommand(`/${layerPath}/media/normalizedTime`, [{ type: 'f', value: val }])
 			},
 		},
 		[ActionId.SELECTED_LAYER_SET_MEDIA_SPEED]: {
-			name: 'Selected Layer / Set Media Speed',
-			options: [options.valueVar],
+			name: 'Layer / Set Media Speed',
+			options: [...layerTargetOptions, options.valueVar],
 			callback: async (action): Promise<void> => {
+				const layerPath = await resolveLayerPath(instance, action)
 				const val = await parseVariableNumber(instance, action, 'value')
 				if (!isNaN(val) && instance.OSC)
-					instance.OSC.sendCommand('/selectedLayer/media/speed', [{ type: 'f', value: val }])
+					instance.OSC.sendCommand(`/${layerPath}/media/speed`, [{ type: 'f', value: val }])
 			},
 		},
 		[ActionId.SELECTED_LAYER_JOG_MEDIA_TIME]: {
-			name: 'Selected Layer / Jog Media Time',
-			description: 'Jog the selected layer media time by a relative number of seconds using tracked layer data',
+			name: 'Layer / Jog Media Time',
+			description: 'Jog the layer media time by a relative number of seconds using tracked layer data',
 			options: [
+				...layerTargetOptions,
 				options.timeVar,
 				{
 					type: 'textinput',
@@ -426,6 +436,7 @@ export function getActions(instance: InstanceBaseExt<MilluminConfig>): Companion
 				},
 			],
 			callback: async (action): Promise<void> => {
+				const layerPath = await resolveLayerPath(instance, action)
 				const time = await parseVariableNumber(instance, action, 'time')
 				if (isNaN(time)) return
 				const layerKey = await parseVariableString(instance, action, 'layer')
@@ -433,7 +444,7 @@ export function getActions(instance: InstanceBaseExt<MilluminConfig>): Companion
 				if (!mediaLayer || mediaLayer.duration === 0) return
 				const newTime = mediaLayer.elapsedTime + time
 				if (instance.OSC)
-					instance.OSC.sendCommand('/selectedLayer/media/time', [{ type: 'f', value: newTime }])
+					instance.OSC.sendCommand(`/${layerPath}/media/time`, [{ type: 'f', value: newTime }])
 			},
 		},
 		[ActionId.CUSTOM_OSC]: {

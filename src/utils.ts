@@ -88,6 +88,45 @@ export const options: Options = {
 }
 
 /**
+ * Common option fields for layer targeting (Selected Layer vs custom layer name).
+ * Prepend these to any action that sends to /selectedLayer/*.
+ */
+export const layerTargetOptions = [
+	{
+		type: 'dropdown' as const,
+		label: 'Layer Target',
+		id: 'layerTarget',
+		default: 'selected',
+		choices: [
+			{ id: 'selected', label: 'Selected Layer' },
+			{ id: 'custom', label: 'Layer Name' },
+		],
+	},
+	{
+		type: 'textinput' as const,
+		label: 'Layer Name',
+		id: 'customLayerName',
+		default: '',
+		useVariables: true,
+		isVisible: (opts: any) => opts.layerTarget === 'custom',
+	},
+]
+
+/**
+ * Resolve the OSC layer path prefix based on layerTarget option.
+ * Returns 'selectedLayer' or the custom layer name.
+ */
+export async function resolveLayerPath(
+	instance: InstanceBaseExt<MilluminConfig>,
+	action: { options: { [key: string]: any } },
+): Promise<string> {
+	if (action.options.layerTarget === 'custom') {
+		return await instance.parseVariablesInString(String(action.options.customLayerName ?? ''))
+	}
+	return 'selectedLayer'
+}
+
+/**
  * Parse a variable-aware option value as a float.
  * Returns the parsed number, or NaN if invalid.
  */
