@@ -12,6 +12,8 @@ export interface Options {
 	timeVar: EnforceDefault<CompanionInputFieldTextInput, string>
 	value: EnforceDefault<CompanionInputFieldNumber, number>
 	valueVar: EnforceDefault<CompanionInputFieldTextInput, string>
+	oscPath: EnforceDefault<CompanionInputFieldTextInput, string>
+	oscArgs: EnforceDefault<CompanionInputFieldTextInput, string>
 }
 
 export const options: Options = {
@@ -66,6 +68,22 @@ export const options: Options = {
 		id: 'value',
 		default: '0',
 		useVariables: true,
+	},
+	oscPath: {
+		type: 'textinput',
+		label: 'OSC Path',
+		id: 'oscPath',
+		default: '/millumin/action/custom',
+		useVariables: true,
+		tooltip: 'Enter the OSC path (e.g., /millumin/action/custom)',
+	},
+	oscArgs: {
+		type: 'textinput',
+		label: 'OSC Arguments',
+		id: 'oscArgs',
+		default: '',
+		useVariables: true,
+		tooltip: 'Optional: comma-separated values with type prefix (e.g., i:1,s:hello,f:0.5). Without prefix, type is auto-detected.',
 	},
 }
 

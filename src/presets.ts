@@ -50,7 +50,7 @@ export function GetPresetList(instance: InstanceBaseExt<MilluminConfig>): Compan
 		name: 'Launch Column 1',
 		style: {
 			text: 'Column\n1',
-			size: 'auto',
+			size: '18',
 			color: White,
 			bgcolor: Blue,
 		},
@@ -107,7 +107,7 @@ export function GetPresetList(instance: InstanceBaseExt<MilluminConfig>): Compan
 		name: 'Stop Column',
 		style: {
 			text: 'STOP\nColumn',
-			size: 'auto',
+			size: '18',
 			color: White,
 			bgcolor: Red,
 		},
@@ -474,6 +474,7 @@ export function GetPresetList(instance: InstanceBaseExt<MilluminConfig>): Compan
 
 	for (const layer of trackedLayers) {
 		const safeId = layer.varName.replace(/[^a-zA-Z0-9]/g, '_')
+		const safeVarName = layer.varName.replace(/\s+/g, '_')
 		const cat = `Layer - ${layer.displayName}`
 
 		presets[`layer_${safeId}_column_name`] = {
@@ -496,7 +497,7 @@ export function GetPresetList(instance: InstanceBaseExt<MilluminConfig>): Compan
 			name: `${layer.displayName} / Column Index`,
 			style: {
 				text: `Column\n$(${moduleId}:currentColumnIndex)`,
-				size: 'auto',
+				size: '18',
 				color: White,
 				bgcolor: Black,
 			},
@@ -509,7 +510,7 @@ export function GetPresetList(instance: InstanceBaseExt<MilluminConfig>): Compan
 			category: cat,
 			name: `${layer.displayName} / Elapsed Time`,
 			style: {
-				text: `${layer.displayName}\n$(${moduleId}:media_${layer.varName}_elapsed_tc)`,
+				text: `${layer.displayName}\n$(${moduleId}:media_${safeVarName}_elapsed_tc)`,
 				size: '14',
 				color: White,
 				bgcolor: Black,
@@ -523,7 +524,7 @@ export function GetPresetList(instance: InstanceBaseExt<MilluminConfig>): Compan
 			category: cat,
 			name: `${layer.displayName} / Remaining Time`,
 			style: {
-				text: `${layer.displayName}\n$(${moduleId}:media_${layer.varName}_remaining_tc)`,
+				text: `${layer.displayName}\n$(${moduleId}:media_${safeVarName}_remaining_tc)`,
 				size: '14',
 				color: White,
 				bgcolor: Black,
@@ -537,7 +538,7 @@ export function GetPresetList(instance: InstanceBaseExt<MilluminConfig>): Compan
 			category: cat,
 			name: `${layer.displayName} / Remaining / Duration`,
 			style: {
-				text: `$(${moduleId}:media_${layer.varName}_duration_tc)\nTRT\n$(${moduleId}:media_${layer.varName}_remaining_tc)`,
+				text: `$(${moduleId}:media_${safeVarName}_duration_tc)\nTRT\n$(${moduleId}:media_${safeVarName}_remaining_tc)`,
 				size: '14',
 				color: White,
 				bgcolor: Black,
@@ -564,7 +565,7 @@ export function GetPresetList(instance: InstanceBaseExt<MilluminConfig>): Compan
 			category: cat,
 			name: `${layer.displayName} / Progress Bar`,
 			style: {
-				text: `$(${moduleId}:media_${layer.varName}_remaining_tc)`,
+				text: `$(${moduleId}:media_${safeVarName}_remaining_tc)`,
 				size: '14',
 				color: White,
 				bgcolor: Black,
@@ -759,6 +760,29 @@ export function GetPresetList(instance: InstanceBaseExt<MilluminConfig>): Compan
 				],
 				feedbacks: [],
 			}
+		}
+
+		// Layer Go To Time (user-entered seconds)
+		presets[`layer_${safeId}_goto_time`] = {
+			type: 'button',
+			category: cat,
+			name: `${layer.displayName} / Go to Time`,
+			style: {
+				text: `${layer.displayName}\nGOTO\nTime`,
+				size: 'auto',
+				color: White,
+				bgcolor: DarkGrey,
+			},
+			steps: [
+				{
+					down: [
+						selectLayerAction,
+						{ actionId: ActionId.SELECTED_LAYER_GO_TO_MEDIA_TIME, options: { time: '0' } },
+					],
+					up: [],
+				},
+			],
+			feedbacks: [],
 		}
 	}
 
