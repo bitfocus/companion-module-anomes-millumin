@@ -3,7 +3,7 @@
 	"name": "anomes-millumin",
 	"shortname": "millumin",
 	"description": "Millumin plugin for Companion",
-	"version": "3.0.0-0",
+	"version": "4.1.0",
 	"license": "MIT",
 	"repository": "git+https://github.com/bitfocus/companion-module-anomes-millumin.git",
 	"bugs": "https://github.com/bitfocus/companion-module-anomes-millumin/issues",
