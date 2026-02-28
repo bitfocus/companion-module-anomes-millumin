@@ -11,6 +11,8 @@ In Millumin, go to Interactions > Manage Devices > OSC tab and configure output 
 
 > Make sure you add the name of the layer when you would like to see remaining time
 
+> **Layer names with spaces** are supported — spaces are automatically converted to underscores in variable IDs (e.g. a layer named `Video Layer` produces variables like `media_Video_Layer_elapsed_tc`).
+
 ![Millumin Settings](images/osx_settings.png)
 ![Companion Settings](images/companion_settings.png)
 
@@ -31,13 +33,13 @@ All text input fields in actions support Companion variables for dynamic control
 * Pause
 * Play
 * Play or Pause (toggle)
-* Go to Time (seconds)
-* Jog Time (±seconds)
+* Go to Time (seconds or timecode)
+* Jog Time (±seconds, relative to current position)
 * Go to Seconds from End
 * Go to Timeline Segment (by name)
-* Restart Media (selected layer)
 
 #### Selected Layer Media
+* Restart Media
 * Start Media (by index or name)
 * Pause Media
 * Play or Pause Media (toggle)
@@ -45,6 +47,7 @@ All text input fields in actions support Companion variables for dynamic control
 * Go to Media Time (seconds)
 * Go to Media Normalized Time (0–1)
 * Set Media Speed
+* Jog Media Time (±seconds, relative to current position on a tracked layer)
 
 #### Selection
 * Select Board (by index or name)
@@ -55,6 +58,9 @@ All text input fields in actions support Companion variables for dynamic control
 * Set Master Video (0–1)
 * Set Master Audio (0–1)
 * Set Master DMX (0–1)
+
+#### Custom OSC
+* Send Custom OSC Command — send any OSC message to Millumin, useful for Interactions panel commands or anything not covered by built-in actions. Arguments support type prefixes (`i:1`, `f:0.5`, `s:hello`) or auto-detection. Both path and arguments support Companion variables.
 
 #### Utility
 * Enter / Exit Fullscreen
@@ -68,7 +74,7 @@ All text input fields in actions support Companion variables for dynamic control
 
 ### Available Feedbacks
 
-* Progress Bar — displays a horizontal progress bar that fills left-to-right as media plays, with configurable color changes for countdown warnings (green → orange → red)
+* Progress Bar — displays a horizontal progress bar that fills left-to-right as media plays, with configurable color changes for countdown warnings (green → orange → red). Thresholds for orange and red are configurable and support variables.
 
 ---
 
@@ -79,6 +85,8 @@ Per tracked media layer (where `layerName` is the configured layer name):
 * `media_layerName_elapsed_tc` — elapsed time
 * `media_layerName_duration_tc` — total duration
 * `media_layerName_remaining_tc` — remaining time
+
+Timecodes show MM:SS for media under an hour, and H:MM:SS or HH:MM:SS for longer media.
 
 **Raw Values**
 * `media_layerName_elapsedTime` — elapsed time in seconds
@@ -120,8 +128,24 @@ Per tracked media layer (where `layerName` is the configured layer name):
 * Save Project
 
 #### Per Tracked Layer
+Each tracked layer gets its own preset category with:
+
+**Info displays:**
 * Column Name / Column Index (current column display)
 * Elapsed Time (formatted timecode)
 * Remaining Time (formatted timecode)
 * TRT (duration + remaining with countdown progress bar)
 * Progress Bar (remaining time with color-changing progress bar)
+
+**Transport controls:**
+* Play or Pause
+* Pause
+* Restart
+* Stop
+* Jog -10s / +10s
+* Go to Time (user-configurable seconds)
+
+**Countdown jumps:**
+* Go to 60s / 30s / 15s / 10s from End
+
+All per-layer presets use a two-action pattern (select layer, then execute) to ensure commands always target the correct layer.
