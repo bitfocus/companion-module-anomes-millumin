@@ -106,6 +106,11 @@ class MilluminInstance extends InstanceBase<MilluminConfig> implements InstanceB
 			} else {
 				this.currentColumnName = ''
 			}
+			// Reset all media layers so TRT / progress bar clear if new column has no media
+			for (const key in this.mediaLayers) {
+				this.mediaLayers[key].elapsedTime = 0
+				this.mediaLayers[key].duration = 0
+			}
 			this.updateVariablesValues()
 		} else if (data.address.toString() == '/millumin/board/stoppedColumn' && 0 < data.args.length) {
 			if (this.currentColumnIndex == Number(data.args[0].value)) {
