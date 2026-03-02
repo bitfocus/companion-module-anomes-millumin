@@ -31,7 +31,7 @@
 	"runtime": {
 		"type": "node18",
 		"api": "nodejs-ipc",
-		"apiVersion": "0.0.0",
+		"apiVersion": "1.11.0",
 		"entrypoint": "../dist/index.js"
 	},
 	"manufacturer": "Anomes",
