@@ -27,6 +27,7 @@ class MilluminInstance extends InstanceBase<MilluminConfig> implements InstanceB
 	public timeLayerElapsedTime = 0
 	public timeLayerDuration = 0
 	public timeLayerMediaIndex = 0
+	private staleCheckInterval: ReturnType<typeof setInterval> | null = null
 
 	constructor(internal: unknown) {
 		super(internal)
@@ -49,10 +50,33 @@ class MilluminInstance extends InstanceBase<MilluminConfig> implements InstanceB
 	public async init(config: MilluminConfig): Promise<void> {
 		this.log('info', `Welcome, Millumin module is being initialized`)
 		await this.configUpdated(config)
+
+		// Check for stale layers every 500ms — if no /media/time update in 1s, media has stopped
+		this.staleCheckInterval = setInterval(() => {
+			const now = Date.now()
+			let changed = false
+			for (const key in this.mediaLayers) {
+				const layer = this.mediaLayers[key]
+				if (layer.duration > 0 && layer.lastUpdate > 0 && (now - layer.lastUpdate) > 1000) {
+					layer.elapsedTime = 0
+					layer.duration = 0
+					layer.lastUpdate = 0
+					changed = true
+				}
+			}
+			if (changed) {
+				this.updateVariablesValues()
+				this.checkFeedbacks(FeedbackId.PROGRESS_BAR)
+			}
+		}, 500)
 	}
 
 	async destroy() {
 		this.log('debug', `Instance destroyed: ${this.id}`)
+		if (this.staleCheckInterval) {
+			clearInterval(this.staleCheckInterval)
+			this.staleCheckInterval = null
+		}
 		this.OSC?.destroy()
 	}
 
@@ -62,6 +86,7 @@ class MilluminInstance extends InstanceBase<MilluminConfig> implements InstanceB
 				elapsedTime: 0,
 				duration: 0,
 				mediaIndex: 0,
+				lastUpdate: 0,
 			}
 		}
 		if (this.config.timeLayerName !== '') {
@@ -72,6 +97,7 @@ class MilluminInstance extends InstanceBase<MilluminConfig> implements InstanceB
 						elapsedTime: 0,
 						duration: 0,
 						mediaIndex: 0,
+						lastUpdate: 0,
 					}
 				}
 			} else {
@@ -79,6 +105,7 @@ class MilluminInstance extends InstanceBase<MilluminConfig> implements InstanceB
 					elapsedTime: 0,
 					duration: 0,
 					mediaIndex: 0,
+					lastUpdate: 0,
 				}
 			}
 		}
@@ -106,10 +133,10 @@ class MilluminInstance extends InstanceBase<MilluminConfig> implements InstanceB
 			} else {
 				this.currentColumnName = ''
 			}
-			// Reset all media layers so TRT / progress bar clear if new column has no media
+			// Reset elapsed time so TRT / progress bar clear if new column has no media
+			// Keep duration intact so countdown jump actions can still calculate targets
 			for (const key in this.mediaLayers) {
 				this.mediaLayers[key].elapsedTime = 0
-				this.mediaLayers[key].duration = 0
 			}
 			this.updateVariablesValues()
 		} else if (data.address.toString() == '/millumin/board/stoppedColumn' && 0 < data.args.length) {
@@ -139,6 +166,7 @@ class MilluminInstance extends InstanceBase<MilluminConfig> implements InstanceB
 					mediaIndex: 0,
 					elapsedTime: 0,
 					duration: 0,
+					lastUpdate: 0,
 				}
 			}
 
@@ -151,6 +179,7 @@ class MilluminInstance extends InstanceBase<MilluminConfig> implements InstanceB
 			&& 2 <= args.length) {
 			this.mediaLayers[layerName].elapsedTime = Number(args[0].value)
 			this.mediaLayers[layerName].duration = Number(args[1].value)
+			this.mediaLayers[layerName].lastUpdate = Date.now()
 		} else if (address.endsWith('/mediaStarted')
 			&& 1 <= args.length) {
 			this.mediaLayers[layerName].mediaIndex = Number(args[1].value)
@@ -161,12 +190,9 @@ class MilluminInstance extends InstanceBase<MilluminConfig> implements InstanceB
 				this.mediaLayers[layerName].elapsedTime = 0
 				this.mediaLayers[layerName].duration = 0
 			}
-		} else if (address.endsWith('/mediaStopped')&&
-			1 <= args.length) {
-			if (this.mediaLayers[layerName].mediaIndex == args[1].value) {
-				this.mediaLayers[layerName].elapsedTime = 0
-				this.mediaLayers[layerName].duration = 0
-			}
+		} else if (address.endsWith('/mediaStopped')) {
+			this.mediaLayers[layerName].elapsedTime = 0
+			this.mediaLayers[layerName].duration = 0
 		}
 
 		this.updateVariablesValues()

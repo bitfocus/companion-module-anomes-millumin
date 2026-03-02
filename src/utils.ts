@@ -172,6 +172,7 @@ export interface MediaLayer {
 	elapsedTime: number
 	duration: number
 	mediaIndex: number
+	lastUpdate: number
 }
 
 export interface InstanceBaseExt<TConfig> extends InstanceBase<TConfig> {
