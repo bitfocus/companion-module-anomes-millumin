@@ -1,5 +1,4 @@
-import {CompanionVariableDefinition, CompanionVariableValues} from '@companion-module/base'
-import { MilluminConfig } from './config'
+import { CompanionVariableValues } from '@companion-module/base'
 import { InstanceBaseExt } from './utils'
 
 /**
@@ -26,7 +25,7 @@ function sanitizeLayerName(name: string): string {
 	return name.replace(/\s+/g, '_')
 }
 
-export function updateVariables(instance: InstanceBaseExt<MilluminConfig>): void {
+export function updateVariables(instance: InstanceBaseExt): void {
 	const variables: CompanionVariableValues = {}
 	variables['currentColumnIndex'] = instance.currentColumnIndex
 	variables['currentColumnName'] = instance.currentColumnName ?? undefined
@@ -56,27 +55,29 @@ export function updateVariables(instance: InstanceBaseExt<MilluminConfig>): void
 	instance.setVariableValues(variables)
 }
 
-export function initVariables(instance: InstanceBaseExt<MilluminConfig>): void {
-	const globalSettings: Set<CompanionVariableDefinition> = new Set([
-		{ name: 'Current Column Index', variableId: 'currentColumnIndex' },
-		{ name: 'Current Column Name', variableId: 'currentColumnName' },
-		{ name: 'Previous Column Name', variableId: 'previousColumnName' },
-		{ name: 'Next Column Name', variableId: 'nextColumnName' },
-	])
+export function initVariables(instance: InstanceBaseExt): void {
+	// API 2.0: setVariableDefinitions takes an object, not an array
+	const varDefs: Record<string, { name: string }> = {
+		currentColumnIndex: { name: 'Current Column Index' },
+		currentColumnName: { name: 'Current Column Name' },
+		previousColumnName: { name: 'Previous Column Name' },
+		nextColumnName: { name: 'Next Column Name' },
+	}
+
 	for (const mediaLayerName in instance.mediaLayers) {
 		const safeName = sanitizeLayerName(mediaLayerName)
 		// Raw values (backwards compatible)
-		globalSettings.add({ name: `${mediaLayerName} / Time Layer / Elapsed Time`, variableId: `media_${safeName}_elapsedTime` })
-		globalSettings.add({ name: `${mediaLayerName} / Time Layer / Duration`, variableId: `media_${safeName}_duration` })
-		globalSettings.add({ name: `${mediaLayerName} / Time Layer / Remaining Time`, variableId: `media_${safeName}_remainingTime` })
-		globalSettings.add({ name: `${mediaLayerName} / Time Layer / Progress`, variableId: `media_${safeName}_progress` })
+		varDefs[`media_${safeName}_elapsedTime`] = { name: `${mediaLayerName} / Time Layer / Elapsed Time` }
+		varDefs[`media_${safeName}_duration`] = { name: `${mediaLayerName} / Time Layer / Duration` }
+		varDefs[`media_${safeName}_remainingTime`] = { name: `${mediaLayerName} / Time Layer / Remaining Time` }
+		varDefs[`media_${safeName}_progress`] = { name: `${mediaLayerName} / Time Layer / Progress` }
 		// Formatted timecodes
-		globalSettings.add({ name: `${mediaLayerName} / Elapsed (MM:SS)`, variableId: `media_${safeName}_elapsed_tc` })
-		globalSettings.add({ name: `${mediaLayerName} / Duration (MM:SS)`, variableId: `media_${safeName}_duration_tc` })
-		globalSettings.add({ name: `${mediaLayerName} / Remaining (MM:SS)`, variableId: `media_${safeName}_remaining_tc` })
+		varDefs[`media_${safeName}_elapsed_tc`] = { name: `${mediaLayerName} / Elapsed (MM:SS)` }
+		varDefs[`media_${safeName}_duration_tc`] = { name: `${mediaLayerName} / Duration (MM:SS)` }
+		varDefs[`media_${safeName}_remaining_tc`] = { name: `${mediaLayerName} / Remaining (MM:SS)` }
 		// Remaining integer seconds
-		globalSettings.add({ name: `${mediaLayerName} / Remaining (seconds)`, variableId: `media_${safeName}_remaining_seconds` })
+		varDefs[`media_${safeName}_remaining_seconds`] = { name: `${mediaLayerName} / Remaining (seconds)` }
 	}
-	const filteredVariables = [...globalSettings]
-	instance.setVariableDefinitions(filteredVariables)
+
+	instance.setVariableDefinitions(varDefs)
 }

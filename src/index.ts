@@ -1,14 +1,18 @@
-import { InstanceBase, runEntrypoint, SomeCompanionConfigField } from '@companion-module/base'
+import { InstanceBase, SomeCompanionConfigField } from '@companion-module/base'
 import { getConfigFields, MilluminConfig } from './config'
 import { getActions } from './actions'
-import {FeedbackId, getFeedbacks} from './feedback'
+import { FeedbackId, getFeedbacks } from './feedback'
 import { GetPresetList } from './presets'
 import { initVariables, updateVariables } from './variables'
 import { OSC, OSCResponse } from './osc'
 import { UpgradeV2ToV3 } from './upgrades'
-import {InstanceBaseExt, MediaLayer} from "./utils";
+import { InstanceBaseExt, MilluminTypes, MediaLayer } from './utils'
 
-class MilluminInstance extends InstanceBase<MilluminConfig> implements InstanceBaseExt<MilluminConfig>{
+// API 2.0: export upgrade scripts as named export
+export const UpgradeScripts = [UpgradeV2ToV3]
+
+// API 2.0: export default, InstanceBase generic is now MilluminTypes
+export default class MilluminInstance extends InstanceBase<MilluminTypes> implements InstanceBaseExt {
 	public config: MilluminConfig = {
 		label: '',
 		host: '',
@@ -114,7 +118,10 @@ class MilluminInstance extends InstanceBase<MilluminConfig> implements InstanceB
 
 		this.setActionDefinitions(getActions(this))
 		this.setFeedbackDefinitions(getFeedbacks(this))
-		this.setPresetDefinitions(GetPresetList(this))
+
+		// API 2.0: setPresetDefinitions now takes (structure, presets)
+		const { structure, presets } = GetPresetList(this)
+		this.setPresetDefinitions(structure, presets)
 	}
 
 	public initVariables(): void {
@@ -133,8 +140,6 @@ class MilluminInstance extends InstanceBase<MilluminConfig> implements InstanceB
 			} else {
 				this.currentColumnName = ''
 			}
-			// Reset elapsed time so TRT / progress bar clear if new column has no media
-			// Keep duration intact so countdown jump actions can still calculate targets
 			for (const key in this.mediaLayers) {
 				this.mediaLayers[key].elapsedTime = 0
 			}
@@ -199,5 +204,3 @@ class MilluminInstance extends InstanceBase<MilluminConfig> implements InstanceB
 		this.checkFeedbacks(FeedbackId.PROGRESS_BAR)
 	}
 }
-
-runEntrypoint(MilluminInstance, [UpgradeV2ToV3])

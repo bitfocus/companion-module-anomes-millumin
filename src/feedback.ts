@@ -1,20 +1,18 @@
-import {CompanionFeedbackDefinitions, CompanionFeedbackDefinition, DropdownChoice} from '@companion-module/base'
-import { MilluminConfig } from './config'
+import { CompanionFeedbackDefinitions, CompanionFeedbackDefinition, CompanionAdvancedFeedbackResult, DropdownChoice } from '@companion-module/base'
 import { InstanceBaseExt } from './utils'
-import { combineRgb } from "@companion-module/base";
-import {graphics} from "companion-module-utils";
-import {OptionsBar} from "companion-module-utils/dist/graphics";
+import { combineRgb } from '@companion-module/base'
+import { graphics } from 'companion-module-utils'
+import { OptionsBar } from 'companion-module-utils/dist/graphics'
 
 export enum FeedbackId {
 	PROGRESS_BAR = 'progressBar'
 }
 
-const green = combineRgb(0,255,0);
-const orange = combineRgb(255,140,0);
-const red = combineRgb(255,0,0);
+const green = combineRgb(0, 255, 0)
+const orange = combineRgb(255, 140, 0)
+const red = combineRgb(255, 0, 0)
 
-
-export function getFeedbacks(instance: InstanceBaseExt<MilluminConfig>): CompanionFeedbackDefinitions {
+export function getFeedbacks(instance: InstanceBaseExt): CompanionFeedbackDefinitions {
 	let trackedLayers: DropdownChoice[] = []
 
 	for (const trackedLayer in instance.mediaLayers) {
@@ -35,7 +33,8 @@ export function getFeedbacks(instance: InstanceBaseExt<MilluminConfig>): Compani
 					type: 'dropdown',
 					choices: trackedLayers,
 					label: 'Layer on media',
-					default: 'Global'
+					default: 'Global',
+					disableAutoExpression: true,
 				},
 				{
 					id: 'hideWhenNotRunning',
@@ -76,22 +75,18 @@ export function getFeedbacks(instance: InstanceBaseExt<MilluminConfig>): Compani
 					default: red,
 				},
 			],
-			callback: async (feedback) => {
+			callback: async (feedback): Promise<CompanionAdvancedFeedbackResult> => {
 				const mediaLayer = instance.mediaLayers[feedback.options.layer!.toString()]
 
 				if (feedback.options.hideWhenNotRunning && mediaLayer.duration === 0) {
-					return {};
+					return {}
 				}
 
 				const remainingSeconds = mediaLayer.duration - mediaLayer.elapsedTime
 
-				// Parse variable-aware threshold values
-				const orangeResolved = await instance.parseVariablesInString(String(feedback.options.orangeSeconds ?? '30'))
-				const redResolved = await instance.parseVariablesInString(String(feedback.options.redSeconds ?? '10'))
-				const orangeThreshold = parseFloat(orangeResolved) || 30
-				const redThreshold = parseFloat(redResolved) || 10
+				const orangeThreshold = parseFloat(String(feedback.options.orangeSeconds ?? '30')) || 30
+				const redThreshold = parseFloat(String(feedback.options.redSeconds ?? '10')) || 10
 
-				// Determine bar color: green → orange → red
 				let barColor: number
 				if (remainingSeconds <= redThreshold) {
 					barColor = +feedback.options.criticalColor!
@@ -105,7 +100,6 @@ export function getFeedbacks(instance: InstanceBaseExt<MilluminConfig>): Compani
 					{ size: 100, color: barColor, background: barColor, backgroundOpacity: 64 },
 				]
 
-				// Progress goes left-to-right: 0% at start, 100% at end
 				const progressPercent = mediaLayer.duration > 0
 					? (100 / mediaLayer.duration * mediaLayer.elapsedTime)
 					: 0
@@ -123,8 +117,10 @@ export function getFeedbacks(instance: InstanceBaseExt<MilluminConfig>): Compani
 					opacity: 255
 				}
 
+				const imgBuf = graphics.bar(options)
+
 				return {
-					imageBuffer: graphics.bar(options)
+					imageBuffer: imgBuf as unknown as string
 				}
 			}
 		}

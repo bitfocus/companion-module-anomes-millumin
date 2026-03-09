@@ -1,4 +1,4 @@
-import { CompanionInputFieldNumber, CompanionInputFieldTextInput, InstanceBase } from '@companion-module/base'
+import { CompanionInputFieldNumber, CompanionInputFieldTextInput, InstanceBase, InstanceTypes } from '@companion-module/base'
 import { MilluminConfig } from './config'
 import { OSC as OSC_Class, OSCResponse } from './osc'
 
@@ -87,16 +87,13 @@ export const options: Options = {
 	},
 }
 
-/**
- * Common option fields for layer targeting (Selected Layer vs custom layer name).
- * Prepend these to any action that sends to /selectedLayer/*.
- */
 export const layerTargetOptions = [
 	{
 		type: 'dropdown' as const,
 		label: 'Layer Target',
 		id: 'layerTarget',
 		default: 'selected',
+		disableAutoExpression: true,
 		choices: [
 			{ id: 'selected', label: 'Selected Layer' },
 			{ id: 'custom', label: 'Layer Name' },
@@ -108,64 +105,43 @@ export const layerTargetOptions = [
 		id: 'customLayerName',
 		default: '',
 		useVariables: true,
-		isVisible: (opts: any) => opts.layerTarget === 'custom',
+		isVisibleExpression: '$(options:layerTarget) == "custom"',
 	},
 ]
 
-/**
- * Resolve the OSC layer path prefix based on layerTarget option.
- * Returns 'selectedLayer' or the custom layer name.
- */
-export async function resolveLayerPath(
-	instance: InstanceBaseExt<MilluminConfig>,
+export function resolveLayerPath(
+	_instance: InstanceBaseExt,
 	action: { options: { [key: string]: any } },
-): Promise<string> {
+): string {
 	if (action.options.layerTarget === 'custom') {
-		return await instance.parseVariablesInString(String(action.options.customLayerName ?? ''))
+		return String(action.options.customLayerName ?? '')
 	}
 	return 'selectedLayer'
 }
 
-/**
- * Parse a variable-aware option value as a float.
- * Returns the parsed number, or NaN if invalid.
- */
-export async function parseVariableNumber(
-	instance: InstanceBaseExt<MilluminConfig>,
+export function parseOptionNumber(
 	action: { options: { [key: string]: any } },
 	key: string,
-): Promise<number> {
+): number {
 	const raw = action.options[key]
 	if (typeof raw === 'number') return raw
-	const resolved = await instance.parseVariablesInString(String(raw ?? ''))
-	return parseFloat(resolved)
+	return parseFloat(String(raw ?? ''))
 }
 
-/**
- * Parse a variable-aware option value as an integer.
- * Returns the parsed integer, or NaN if invalid.
- */
-export async function parseVariableInt(
-	instance: InstanceBaseExt<MilluminConfig>,
+export function parseOptionInt(
 	action: { options: { [key: string]: any } },
 	key: string,
-): Promise<number> {
+): number {
 	const raw = action.options[key]
 	if (typeof raw === 'number') return Math.round(raw)
-	const resolved = await instance.parseVariablesInString(String(raw ?? ''))
-	return parseInt(resolved, 10)
+	return parseInt(String(raw ?? ''), 10)
 }
 
-/**
- * Resolve a variable-aware string option.
- */
-export async function parseVariableString(
-	instance: InstanceBaseExt<MilluminConfig>,
+export function getOptionString(
 	action: { options: { [key: string]: any } },
 	key: string,
-): Promise<string> {
-	const raw = action.options[key]
-	return await instance.parseVariablesInString(String(raw ?? ''))
+): string {
+	return String(action.options[key] ?? '')
 }
 
 export interface MediaLayer {
@@ -175,8 +151,13 @@ export interface MediaLayer {
 	lastUpdate: number
 }
 
-export interface InstanceBaseExt<TConfig> extends InstanceBase<TConfig> {
-	config: TConfig
+// API 2.0: InstanceBase takes InstanceTypes, not just config
+export interface MilluminTypes extends InstanceTypes {
+	config: MilluminConfig
+}
+
+export interface InstanceBaseExt extends InstanceBase<MilluminTypes> {
+	config: MilluminConfig
 	OSC: OSC_Class | null
 
 	currentColumnIndex: number
