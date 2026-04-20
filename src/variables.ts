@@ -1,5 +1,5 @@
 import { CompanionVariableValues } from '@companion-module/base'
-import { InstanceBaseExt } from './utils'
+import { InstanceBaseExt } from './utils.js'
 
 /**
  * Format seconds into MM:SS or H:MM:SS timecode string.

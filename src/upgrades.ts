@@ -1,4 +1,4 @@
-import { v2Actions } from './v2CommandsToUpgradeTov3'
+import { v2Actions } from './v2CommandsToUpgradeTov3.js'
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function UpgradeV2toV3(_context: any, _props: any): any {

@@ -1,6 +1,8 @@
-import { InstanceBaseExt } from './utils'
+import { InstanceBaseExt } from './utils.js'
 import { InstanceStatus, OSCSomeArguments } from '@companion-module/base'
-const osc = require('osc') // eslint-disable-line
+import { createRequire } from 'node:module'
+const require = createRequire(import.meta.url)
+const osc = require('osc')
 
 export interface OSCResponse {
 	address: string

@@ -1,7 +1,7 @@
 import { combineRgb } from '@companion-module/base'
-import { ActionId } from './actions'
-import { FeedbackId } from './feedback'
-import { InstanceBaseExt } from './utils'
+import { ActionId } from './actions.js'
+import { FeedbackId } from './feedback.js'
+import { InstanceBaseExt } from './utils.js'
 
 /**
  * API 2.0 Preset Migration:
@@ -235,7 +235,10 @@ export function GetPresetList(instance: InstanceBaseExt): { structure: any[], pr
 	for (const layer of trackedLayers) {
 		const safeId = layer.varName.replace(/[^a-zA-Z0-9]/g, '_')
 		const safeVarName = layer.varName.replace(/\s+/g, '_')
-		const layerPresetIds: string[] = []
+		const displayIds: string[] = []
+		const transportIds: string[] = []
+		const countdownIds: string[] = []
+		const gotoIds: string[] = []
 
 		// Column info
 		presets[`layer_${safeId}_column_name`] = {
@@ -245,7 +248,7 @@ export function GetPresetList(instance: InstanceBaseExt): { structure: any[], pr
 			steps: [{ down: [], up: [] }],
 			feedbacks: [],
 		}
-		layerPresetIds.push(`layer_${safeId}_column_name`)
+		displayIds.push(`layer_${safeId}_column_name`)
 
 		presets[`layer_${safeId}_column_index`] = {
 			type: 'simple',
@@ -254,7 +257,7 @@ export function GetPresetList(instance: InstanceBaseExt): { structure: any[], pr
 			steps: [{ down: [], up: [] }],
 			feedbacks: [],
 		}
-		layerPresetIds.push(`layer_${safeId}_column_index`)
+		displayIds.push(`layer_${safeId}_column_index`)
 
 		// Time displays
 		presets[`layer_${safeId}_elapsed`] = {
@@ -264,7 +267,7 @@ export function GetPresetList(instance: InstanceBaseExt): { structure: any[], pr
 			steps: [{ down: [], up: [] }],
 			feedbacks: [],
 		}
-		layerPresetIds.push(`layer_${safeId}_elapsed`)
+		displayIds.push(`layer_${safeId}_elapsed`)
 
 		presets[`layer_${safeId}_remaining`] = {
 			type: 'simple',
@@ -273,7 +276,7 @@ export function GetPresetList(instance: InstanceBaseExt): { structure: any[], pr
 			steps: [{ down: [], up: [] }],
 			feedbacks: [],
 		}
-		layerPresetIds.push(`layer_${safeId}_remaining`)
+		displayIds.push(`layer_${safeId}_remaining`)
 
 		presets[`layer_${safeId}_remaining_duration`] = {
 			type: 'simple',
@@ -291,7 +294,7 @@ export function GetPresetList(instance: InstanceBaseExt): { structure: any[], pr
 				},
 			}],
 		}
-		layerPresetIds.push(`layer_${safeId}_remaining_duration`)
+		displayIds.push(`layer_${safeId}_remaining_duration`)
 
 		presets[`layer_${safeId}_progress_bar`] = {
 			type: 'simple',
@@ -306,7 +309,7 @@ export function GetPresetList(instance: InstanceBaseExt): { structure: any[], pr
 				},
 			}],
 		}
-		layerPresetIds.push(`layer_${safeId}_progress_bar`)
+		displayIds.push(`layer_${safeId}_progress_bar`)
 
 		// Build the select-layer action for this tracked layer
 		const selectLayerAction = layer.varName === 'firstByIndex'
@@ -321,7 +324,7 @@ export function GetPresetList(instance: InstanceBaseExt): { structure: any[], pr
 			steps: [{ down: [selectLayerAction, { actionId: ActionId.SELECTED_LAYER_PLAY_OR_PAUSE_MEDIA, options: {} }], up: [] }],
 			feedbacks: [],
 		}
-		layerPresetIds.push(`layer_${safeId}_play_pause`)
+		transportIds.push(`layer_${safeId}_play_pause`)
 
 		presets[`layer_${safeId}_pause`] = {
 			type: 'simple',
@@ -330,7 +333,7 @@ export function GetPresetList(instance: InstanceBaseExt): { structure: any[], pr
 			steps: [{ down: [selectLayerAction, { actionId: ActionId.SELECTED_LAYER_PAUSE_MEDIA, options: {} }], up: [] }],
 			feedbacks: [],
 		}
-		layerPresetIds.push(`layer_${safeId}_pause`)
+		transportIds.push(`layer_${safeId}_pause`)
 
 		presets[`layer_${safeId}_restart`] = {
 			type: 'simple',
@@ -339,7 +342,7 @@ export function GetPresetList(instance: InstanceBaseExt): { structure: any[], pr
 			steps: [{ down: [selectLayerAction, { actionId: ActionId.SELECTED_LAYER_RESTART_MEDIA, options: {} }], up: [] }],
 			feedbacks: [],
 		}
-		layerPresetIds.push(`layer_${safeId}_restart`)
+		transportIds.push(`layer_${safeId}_restart`)
 
 		presets[`layer_${safeId}_stop`] = {
 			type: 'simple',
@@ -348,7 +351,7 @@ export function GetPresetList(instance: InstanceBaseExt): { structure: any[], pr
 			steps: [{ down: [selectLayerAction, { actionId: ActionId.SELECTED_LAYER_STOP_MEDIA, options: {} }], up: [] }],
 			feedbacks: [],
 		}
-		layerPresetIds.push(`layer_${safeId}_stop`)
+		transportIds.push(`layer_${safeId}_stop`)
 
 		presets[`layer_${safeId}_jog_minus_10`] = {
 			type: 'simple',
@@ -357,7 +360,7 @@ export function GetPresetList(instance: InstanceBaseExt): { structure: any[], pr
 			steps: [{ down: [selectLayerAction, { actionId: ActionId.SELECTED_LAYER_JOG_MEDIA_TIME, options: { time: '-10', layer: layer.varName } }], up: [] }],
 			feedbacks: [],
 		}
-		layerPresetIds.push(`layer_${safeId}_jog_minus_10`)
+		transportIds.push(`layer_${safeId}_jog_minus_10`)
 
 		presets[`layer_${safeId}_jog_plus_10`] = {
 			type: 'simple',
@@ -366,7 +369,7 @@ export function GetPresetList(instance: InstanceBaseExt): { structure: any[], pr
 			steps: [{ down: [selectLayerAction, { actionId: ActionId.SELECTED_LAYER_JOG_MEDIA_TIME, options: { time: '10', layer: layer.varName } }], up: [] }],
 			feedbacks: [],
 		}
-		layerPresetIds.push(`layer_${safeId}_jog_plus_10`)
+		transportIds.push(`layer_${safeId}_jog_plus_10`)
 
 		// Countdown jumps
 		const layerCountdownJumps = [
@@ -385,7 +388,7 @@ export function GetPresetList(instance: InstanceBaseExt): { structure: any[], pr
 				steps: [{ down: [selectLayerAction, { actionId: ActionId.SELECTED_LAYER_GO_TO_MEDIA_TIME, options: { time: String(-jump.seconds) } }], up: [] }],
 				feedbacks: [],
 			}
-			layerPresetIds.push(id)
+			countdownIds.push(id)
 		}
 
 		// Go to time
@@ -396,18 +399,19 @@ export function GetPresetList(instance: InstanceBaseExt): { structure: any[], pr
 			steps: [{ down: [selectLayerAction, { actionId: ActionId.SELECTED_LAYER_GO_TO_MEDIA_TIME, options: { time: '0' } }], up: [] }],
 			feedbacks: [],
 		}
-		layerPresetIds.push(`layer_${safeId}_goto_time`)
+		gotoIds.push(`layer_${safeId}_goto_time`)
 
-		// Build this layer's section for the structure
+		// Build this layer's section: four sub-groups mirroring the global layout
+		const layerGroups: any[] = []
+		if (displayIds.length) layerGroups.push({ id: `layer_${safeId}_displays`, type: 'simple', name: 'Displays', presets: displayIds })
+		if (transportIds.length) layerGroups.push({ id: `layer_${safeId}_transport`, type: 'simple', name: 'Transport', presets: transportIds })
+		if (countdownIds.length) layerGroups.push({ id: `layer_${safeId}_countdown`, type: 'simple', name: 'Countdown Jumps', presets: countdownIds })
+		if (gotoIds.length) layerGroups.push({ id: `layer_${safeId}_goto`, type: 'simple', name: 'Go To', presets: gotoIds })
+
 		layerSections.push({
 			id: `layer_${safeId}`,
 			name: `Layer - ${layer.displayName}`,
-			definitions: [{
-				id: `layer_${safeId}_group`,
-				type: 'simple',
-				name: `${layer.displayName} Controls`,
-				presets: layerPresetIds,
-			}],
+			definitions: layerGroups,
 		})
 	}
 

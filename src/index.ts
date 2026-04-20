@@ -1,12 +1,12 @@
 import { InstanceBase, SomeCompanionConfigField } from '@companion-module/base'
-import { getConfigFields, MilluminConfig } from './config'
-import { getActions } from './actions'
-import { FeedbackId, getFeedbacks } from './feedback'
-import { GetPresetList } from './presets'
-import { initVariables, updateVariables } from './variables'
-import { OSC, OSCResponse } from './osc'
-import { UpgradeV2ToV3 } from './upgrades'
-import { InstanceBaseExt, MilluminTypes, MediaLayer } from './utils'
+import { getConfigFields, MilluminConfig } from './config.js'
+import { getActions } from './actions.js'
+import { FeedbackId, getFeedbacks } from './feedback.js'
+import { GetPresetList } from './presets.js'
+import { initVariables, updateVariables } from './variables.js'
+import { OSC, OSCResponse } from './osc.js'
+import { UpgradeV2ToV3 } from './upgrades.js'
+import { InstanceBaseExt, MilluminTypes, MediaLayer } from './utils.js'
 
 // API 2.0: export upgrade scripts as named export
 export const UpgradeScripts = [UpgradeV2ToV3]

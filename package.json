@@ -1,6 +1,7 @@
 {
 	"name": "anomes-millumin",
 	"version": "5.0.0",
+	"type": "module",
 	"main": "dist/index.js",
 	"repository": {
 		"type": "git",

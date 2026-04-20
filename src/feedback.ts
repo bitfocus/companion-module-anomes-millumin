@@ -1,8 +1,8 @@
 import { CompanionFeedbackDefinitions, CompanionFeedbackDefinition, CompanionAdvancedFeedbackResult, DropdownChoice } from '@companion-module/base'
-import { InstanceBaseExt } from './utils'
+import { InstanceBaseExt } from './utils.js'
 import { combineRgb } from '@companion-module/base'
 import { graphics } from 'companion-module-utils'
-import { OptionsBar } from 'companion-module-utils/dist/graphics'
+type OptionsBar = Parameters<typeof graphics.bar>[0]
 
 export enum FeedbackId {
 	PROGRESS_BAR = 'progressBar'
@@ -120,7 +120,7 @@ export function getFeedbacks(instance: InstanceBaseExt): CompanionFeedbackDefini
 				const imgBuf = graphics.bar(options)
 
 				return {
-					imageBuffer: imgBuf as unknown as string
+					imageBuffer: Buffer.from(imgBuf).toString('base64'),
 				}
 			}
 		}

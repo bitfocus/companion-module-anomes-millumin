@@ -1,6 +1,6 @@
 import { CompanionInputFieldNumber, CompanionInputFieldTextInput, InstanceBase, InstanceTypes } from '@companion-module/base'
-import { MilluminConfig } from './config'
-import { OSC as OSC_Class, OSCResponse } from './osc'
+import { MilluminConfig } from './config.js'
+import { OSC as OSC_Class, OSCResponse } from './osc.js'
 
 type EnforceDefault<T, U> = Omit<T, 'default'> & { default: U }
 

@@ -1,5 +1,5 @@
 import { CompanionActionDefinition, CompanionActionDefinitions } from '@companion-module/base'
-import { InstanceBaseExt, options, layerTargetOptions, resolveLayerPath, parseOptionInt, parseOptionNumber, getOptionString } from './utils'
+import { InstanceBaseExt, options, layerTargetOptions, resolveLayerPath, parseOptionInt, parseOptionNumber, getOptionString } from './utils.js'
 
 export enum ActionId {
 	LAUNCH_OR_STOP_COLUMN_BY_INDEX = 'Action_LaunchOrStopColumn_ByIndex',
