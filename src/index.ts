@@ -1,14 +1,18 @@
-import { InstanceBase, runEntrypoint, SomeCompanionConfigField } from '@companion-module/base'
-import { getConfigFields, MilluminConfig } from './config'
-import { getActions } from './actions'
-import {FeedbackId, getFeedbacks} from './feedback'
-import { GetPresetList } from './presets'
-import { initVariables, updateVariables } from './variables'
-import { OSC, OSCResponse } from './osc'
-import { UpgradeV2ToV3 } from './upgrades'
-import {InstanceBaseExt, MediaLayer} from "./utils";
+import { InstanceBase, SomeCompanionConfigField } from '@companion-module/base'
+import { getConfigFields, MilluminConfig } from './config.js'
+import { getActions } from './actions.js'
+import { FeedbackId, getFeedbacks } from './feedback.js'
+import { GetPresetList } from './presets.js'
+import { initVariables, updateVariables } from './variables.js'
+import { OSC, OSCResponse } from './osc.js'
+import { UpgradeV2ToV3 } from './upgrades.js'
+import { InstanceBaseExt, MilluminTypes, MediaLayer } from './utils.js'
 
-class MilluminInstance extends InstanceBase<MilluminConfig> implements InstanceBaseExt<MilluminConfig>{
+// API 2.0: export upgrade scripts as named export
+export const UpgradeScripts = [UpgradeV2ToV3]
+
+// API 2.0: export default, InstanceBase generic is now MilluminTypes
+export default class MilluminInstance extends InstanceBase<MilluminTypes> implements InstanceBaseExt {
 	public config: MilluminConfig = {
 		label: '',
 		host: '',
@@ -27,6 +31,7 @@ class MilluminInstance extends InstanceBase<MilluminConfig> implements InstanceB
 	public timeLayerElapsedTime = 0
 	public timeLayerDuration = 0
 	public timeLayerMediaIndex = 0
+	private staleCheckInterval: ReturnType<typeof setInterval> | null = null
 
 	constructor(internal: unknown) {
 		super(internal)
@@ -49,10 +54,33 @@ class MilluminInstance extends InstanceBase<MilluminConfig> implements InstanceB
 	public async init(config: MilluminConfig): Promise<void> {
 		this.log('info', `Welcome, Millumin module is being initialized`)
 		await this.configUpdated(config)
+
+		// Check for stale layers every 500ms — if no /media/time update in 1s, media has stopped
+		this.staleCheckInterval = setInterval(() => {
+			const now = Date.now()
+			let changed = false
+			for (const key in this.mediaLayers) {
+				const layer = this.mediaLayers[key]
+				if (layer.duration > 0 && layer.lastUpdate > 0 && (now - layer.lastUpdate) > 1000) {
+					layer.elapsedTime = 0
+					layer.duration = 0
+					layer.lastUpdate = 0
+					changed = true
+				}
+			}
+			if (changed) {
+				this.updateVariablesValues()
+				this.checkFeedbacks(FeedbackId.PROGRESS_BAR)
+			}
+		}, 500)
 	}
 
 	async destroy() {
 		this.log('debug', `Instance destroyed: ${this.id}`)
+		if (this.staleCheckInterval) {
+			clearInterval(this.staleCheckInterval)
+			this.staleCheckInterval = null
+		}
 		this.OSC?.destroy()
 	}
 
@@ -62,6 +90,7 @@ class MilluminInstance extends InstanceBase<MilluminConfig> implements InstanceB
 				elapsedTime: 0,
 				duration: 0,
 				mediaIndex: 0,
+				lastUpdate: 0,
 			}
 		}
 		if (this.config.timeLayerName !== '') {
@@ -72,6 +101,7 @@ class MilluminInstance extends InstanceBase<MilluminConfig> implements InstanceB
 						elapsedTime: 0,
 						duration: 0,
 						mediaIndex: 0,
+						lastUpdate: 0,
 					}
 				}
 			} else {
@@ -79,6 +109,7 @@ class MilluminInstance extends InstanceBase<MilluminConfig> implements InstanceB
 					elapsedTime: 0,
 					duration: 0,
 					mediaIndex: 0,
+					lastUpdate: 0,
 				}
 			}
 		}
@@ -87,7 +118,10 @@ class MilluminInstance extends InstanceBase<MilluminConfig> implements InstanceB
 
 		this.setActionDefinitions(getActions(this))
 		this.setFeedbackDefinitions(getFeedbacks(this))
-		this.setPresetDefinitions(GetPresetList())
+
+		// API 2.0: setPresetDefinitions now takes (structure, presets)
+		const { structure, presets } = GetPresetList(this)
+		this.setPresetDefinitions(structure, presets)
 	}
 
 	public initVariables(): void {
@@ -100,15 +134,18 @@ class MilluminInstance extends InstanceBase<MilluminConfig> implements InstanceB
 
 	public receiveOSCResponse(data: OSCResponse): void {
 		if (data.address.toString() == '/millumin/board/launchedColumn' && 0 < data.args.length) {
-			this.currentColumnIndex = data.args[0].value
+			this.currentColumnIndex = Number(data.args[0].value)
 			if (1 < data.args.length) {
-				this.currentColumnName = data.args[1].value
+				this.currentColumnName = String(data.args[1].value)
 			} else {
 				this.currentColumnName = ''
 			}
+			for (const key in this.mediaLayers) {
+				this.mediaLayers[key].elapsedTime = 0
+			}
 			this.updateVariablesValues()
 		} else if (data.address.toString() == '/millumin/board/stoppedColumn' && 0 < data.args.length) {
-			if (this.currentColumnIndex == data.args[0].value) {
+			if (this.currentColumnIndex == Number(data.args[0].value)) {
 				this.currentColumnIndex = 0
 				this.currentColumnName = ''
 				this.previousColumnName = ''
@@ -120,8 +157,8 @@ class MilluminInstance extends InstanceBase<MilluminConfig> implements InstanceB
 			6 <= data.args.length &&
 			data.args[0].value == 'board/launchedColumn'
 		) {
-			this.previousColumnName = data.args[2].value
-			this.nextColumnName = data.args[4].value
+			this.previousColumnName = String(data.args[2].value)
+			this.nextColumnName = String(data.args[4].value)
 			this.updateVariablesValues()
 		} else if (data.address.startsWith('/millumin/index:1/media')) {
 			this.updateMediaLayer(data.address, 'firstByIndex', data.args)
@@ -134,6 +171,7 @@ class MilluminInstance extends InstanceBase<MilluminConfig> implements InstanceB
 					mediaIndex: 0,
 					elapsedTime: 0,
 					duration: 0,
+					lastUpdate: 0,
 				}
 			}
 
@@ -141,32 +179,28 @@ class MilluminInstance extends InstanceBase<MilluminConfig> implements InstanceB
 		}
 	}
 
-	public updateMediaLayer(address: string, layerName: string, args: { type: string, value: any }[]) {
+	public updateMediaLayer(address: string, layerName: string, args: { type: string, value: string | number | boolean }[]) {
 		if (address.endsWith('/media/time')
 			&& 2 <= args.length) {
-			this.mediaLayers[layerName].elapsedTime = args[0].value
-			this.mediaLayers[layerName].duration = args[1].value
+			this.mediaLayers[layerName].elapsedTime = Number(args[0].value)
+			this.mediaLayers[layerName].duration = Number(args[1].value)
+			this.mediaLayers[layerName].lastUpdate = Date.now()
 		} else if (address.endsWith('/mediaStarted')
 			&& 1 <= args.length) {
-			this.mediaLayers[layerName].mediaIndex = args[1].value
+			this.mediaLayers[layerName].mediaIndex = Number(args[1].value)
 			if (3 <= args.length) {
 				this.mediaLayers[layerName].elapsedTime = 0
-				this.mediaLayers[layerName].duration = args[2].value
+				this.mediaLayers[layerName].duration = Number(args[2].value)
 			} else {
 				this.mediaLayers[layerName].elapsedTime = 0
 				this.mediaLayers[layerName].duration = 0
 			}
-		} else if (address.endsWith('/mediaStopped')&&
-			1 <= args.length) {
-			if (this.mediaLayers[layerName].mediaIndex == args[1].value) {
-				this.mediaLayers[layerName].elapsedTime = 0
-				this.mediaLayers[layerName].duration = 0
-			}
+		} else if (address.endsWith('/mediaStopped')) {
+			this.mediaLayers[layerName].elapsedTime = 0
+			this.mediaLayers[layerName].duration = 0
 		}
 
 		this.updateVariablesValues()
 		this.checkFeedbacks(FeedbackId.PROGRESS_BAR)
 	}
 }
-
-runEntrypoint(MilluminInstance, [UpgradeV2ToV3])

@@ -1,24 +1,26 @@
-import { InstanceBaseExt } from './utils'
+import { InstanceBaseExt } from './utils.js'
 import { InstanceStatus, OSCSomeArguments } from '@companion-module/base'
-import { MilluminConfig } from './config'
-const osc = require('osc') // eslint-disable-line
+import { createRequire } from 'node:module'
+const require = createRequire(import.meta.url)
+const osc = require('osc')
 
 export interface OSCResponse {
 	address: string
 	args: {
 		type: string
-		value: any
+		value: string | number | boolean
 	}[]
 }
 
 export class OSC {
-	private readonly instance: InstanceBaseExt<MilluminConfig>
+	private readonly instance: InstanceBaseExt
 	private oscHost = ''
 	private oscTXPort = 5000
 	private oscRXPort = 8000
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any -- osc.UDPPort has no type definitions
 	private udpPort: any
 
-	constructor(instance: InstanceBaseExt<MilluminConfig>) {
+	constructor(instance: InstanceBaseExt) {
 		this.instance = instance
 		this.Connect()
 	}

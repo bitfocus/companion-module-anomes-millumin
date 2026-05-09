@@ -1,6 +1,8 @@
 import { Regex, SomeCompanionConfigField } from '@companion-module/base'
 
+// API 2.0: Index signature satisfies JsonObject (no undefined allowed)
 export interface MilluminConfig {
+	[key: string]: string | number | boolean
 	label: string
 	host: string
 	tx_port: number
