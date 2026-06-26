@@ -7,6 +7,8 @@ export interface MilluminConfig {
 	rx_port: number
 	timeLayerName: string
 	trackMultipleLayers: boolean
+	logMediaStarts: boolean
+	logMediaStops: boolean
 }
 
 export const getConfigFields = (): SomeCompanionConfigField[] => {
@@ -66,6 +68,27 @@ export const getConfigFields = (): SomeCompanionConfigField[] => {
 			label: 'Enable tracking of multiple layer (comma separated list)',
 			width: 12,
 			default: false,
-		}
+		},
+		{
+			type: 'static-text',
+			width: 12,
+			value: 'Write media playback events to the Companion log. Useful if you need to provide a audit trail of e.g. advert playouts.',
+			id: 'info',
+			label: 'Logging',
+		},
+		{
+			type: 'checkbox',
+			id: 'logMediaStarts',
+			label: 'Log media start events',
+			width: 6,
+			default: false,
+		},
+		{
+			type: 'checkbox',
+			id: 'logMediaStops',
+			label: 'Log media stop events',
+			width: 6,
+			default: false,
+		},
 	]
 }
