@@ -1,48 +1,38 @@
-import type {
-	CompanionMigrationAction,
-	CompanionStaticUpgradeProps,
-	CompanionStaticUpgradeResult,
-	CompanionUpgradeContext,
-} from '@companion-module/base'
+import { v2Actions } from './v2CommandsToUpgradeTov3.js'
 
-import { MilluminConfig } from './config'
-import { v2Actions } from './v2CommandsToUpgradeTov3'
-
-export function UpgradeV2toV3(
-	_context: CompanionUpgradeContext<MilluminConfig>,
-	_props: CompanionStaticUpgradeProps<MilluminConfig>,
-): CompanionStaticUpgradeResult<MilluminConfig> {
-	const result: CompanionStaticUpgradeResult<MilluminConfig> = {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function UpgradeV2toV3(_context: any, _props: any): any {
+	return {
 		updatedActions: [],
 		updatedConfig: null,
 		updatedFeedbacks: [],
 	}
-
-	return result
 }
 
-export function UpgradeV2ToV3(
-	_context: CompanionUpgradeContext<MilluminConfig>,
-	props: CompanionStaticUpgradeProps<MilluminConfig>,
-): CompanionStaticUpgradeResult<MilluminConfig> {
-	// let config: MilluminConfig = props.config;
-	const actions: CompanionMigrationAction[] = props.actions
+export function UpgradeV2ToV3(_context: any, props: any): any {
+	const actions = props.actions
 
-	const result: CompanionStaticUpgradeResult<MilluminConfig> = {
+	const result: any = {
 		updatedActions: [],
 		updatedConfig: null,
 		updatedFeedbacks: [],
 	}
 
 	for (const action of actions) {
+		// API 2.0: options are now { isExpression, value } shape
+		const actionIdOpt = action.options.actionID
+		const actionIdValue = actionIdOpt && typeof actionIdOpt === 'object' && 'value' in actionIdOpt
+			? String(actionIdOpt.value)
+			: undefined
+
 		if (
 			(action.actionId === 'UserActions' ||
 				action.actionId === 'GlobalActions' ||
 				action.actionId === 'SpecialActions') &&
-			action.options.actionID !== undefined &&
-			Object.prototype.hasOwnProperty.call(v2Actions, action.options.actionID as string)
+			actionIdValue !== undefined &&
+			Object.prototype.hasOwnProperty.call(v2Actions, actionIdValue)
 		) {
-			const v2Action = v2Actions[action.options.actionID as string]
+			const v2Action = v2Actions[actionIdValue]
 			action.actionId = v2Action.newActionId
 			result.updatedActions.push(action)
 		} else if (Object.prototype.hasOwnProperty.call(v2Actions, action.actionId)) {

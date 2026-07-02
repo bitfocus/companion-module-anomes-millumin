@@ -1,4 +1,4 @@
-import { ActionId } from './actions'
+import { ActionId } from './actions.js'
 
 interface v2Action {
 	[key: string]: {

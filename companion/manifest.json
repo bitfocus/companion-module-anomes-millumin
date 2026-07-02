@@ -1,9 +1,11 @@
 {
+	"$schema": "../node_modules/@companion-module/base/assets/manifest.schema.json",
+	"type": "connection",
 	"id": "anomes-millumin",
 	"name": "anomes-millumin",
 	"shortname": "millumin",
 	"description": "Millumin plugin for Companion",
-	"version": "3.0.0-0",
+	"version": "5.0.0",
 	"license": "MIT",
 	"repository": "git+https://github.com/bitfocus/companion-module-anomes-millumin.git",
 	"bugs": "https://github.com/bitfocus/companion-module-anomes-millumin/issues",
@@ -29,16 +31,20 @@
 		"millumin"
 	],
 	"runtime": {
-		"type": "node18",
+		"type": "node22",
 		"api": "nodejs-ipc",
 		"apiVersion": "0.0.0",
-		"entrypoint": "../dist/index.js"
+		"entrypoint": "../dist/index.js",
+		"permissions": {
+			"native-addons": true
+		}
 	},
 	"manufacturer": "Anomes",
 	"products": [
 		"Millumin 2",
 		"Millumin 3",
-		"Millumin 4"
+		"Millumin 4",
+		"Millumin 5"
 	],
 	"keywords": [
 		"Software",
