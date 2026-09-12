@@ -1,14 +1,14 @@
 import { InstanceBase, runEntrypoint, SomeCompanionConfigField } from '@companion-module/base'
 import { getConfigFields, MilluminConfig } from './config'
 import { getActions } from './actions'
-import {FeedbackId, getFeedbacks} from './feedback'
+import { FeedbackId, getFeedbacks } from './feedback'
 import { GetPresetList } from './presets'
 import { initVariables, updateVariables } from './variables'
 import { OSC, OSCResponse } from './osc'
 import { UpgradeV2ToV3 } from './upgrades'
-import {InstanceBaseExt, MediaLayer} from "./utils";
+import { InstanceBaseExt, MediaLayer } from "./utils";
 
-class MilluminInstance extends InstanceBase<MilluminConfig> implements InstanceBaseExt<MilluminConfig>{
+class MilluminInstance extends InstanceBase<MilluminConfig> implements InstanceBaseExt<MilluminConfig> {
 	public config: MilluminConfig = {
 		label: '',
 		host: '',
@@ -16,6 +16,8 @@ class MilluminInstance extends InstanceBase<MilluminConfig> implements InstanceB
 		rx_port: 0,
 		timeLayerName: '',
 		trackMultipleLayers: false,
+		logMediaStarts: false,
+		logMediaStops: false,
 	}
 
 	public OSC: OSC | null = null
@@ -138,6 +140,16 @@ class MilluminInstance extends InstanceBase<MilluminConfig> implements InstanceB
 			}
 
 			this.updateMediaLayer(data.address, layerName, data.args)
+
+			if (this.config.logMediaStarts && data.address.endsWith('mediaStarted') && 2 <= data.args.length) {
+				let logMessage = `Media started on layer ${layerName}, column #${data.args[0].value}, filename: ${data.args[1].value}`;
+				if (3 <= data.args.length) {
+					logMessage += `, duration: ${data.args[2].value}s`;
+				}
+				this.log('info', logMessage);
+			} else if (this.config.logMediaStops && data.address.endsWith('mediaStopped') && 2 <= data.args.length) {
+				this.log('info', `Media stopped on layer ${layerName}, column #${data.args[0].value}, filename: ${data.args[1].value}`);
+			}
 		}
 	}
 
@@ -156,7 +168,7 @@ class MilluminInstance extends InstanceBase<MilluminConfig> implements InstanceB
 				this.mediaLayers[layerName].elapsedTime = 0
 				this.mediaLayers[layerName].duration = 0
 			}
-		} else if (address.endsWith('/mediaStopped')&&
+		} else if (address.endsWith('/mediaStopped') &&
 			1 <= args.length) {
 			if (this.mediaLayers[layerName].mediaIndex == args[1].value) {
 				this.mediaLayers[layerName].elapsedTime = 0
