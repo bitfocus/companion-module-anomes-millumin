@@ -18,12 +18,12 @@
 	"license": "MIT",
 	"prettier": "@companion-module/tools/.prettierrc.json",
 	"dependencies": {
-		"@companion-module/base": "^1.11.0",
+		"@companion-module/base": "~1.15.0",
 		"companion-module-utils": "^0.5.0",
 		"osc": "^2.4.4"
 	},
 	"devDependencies": {
-		"@companion-module/tools": "^2.1.0",
+		"@companion-module/tools": "^2.9.0",
 		"@types/node": "^17.0.12",
 		"eslint": "^9.12.0",
 		"husky": "^7.0.4",
