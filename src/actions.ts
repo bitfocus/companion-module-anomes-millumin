@@ -133,11 +133,11 @@ export function getActions(instance: InstanceBaseExt<MilluminConfig>): Companion
 			options: [options.time],
 			callback: (action): void => {
 				const mediaLayer = instance.mediaLayers['firstByIndex']
-				if (mediaLayer.duration === 0) return;
+				if (mediaLayer.duration === 0) return
 				const newTime = mediaLayer.elapsedTime + action.options.time
 
 				if (instance.OSC) instance.OSC.sendCommand('/action/goToTime', [{ type: 'f', value: newTime }])
-			}
+			},
 		},
 		[ActionId.GO_TO_TIMELINE_SEGMENT]: {
 			name: 'Go to Timeline Segment',

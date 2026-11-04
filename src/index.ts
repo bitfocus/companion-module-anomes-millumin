@@ -1,14 +1,14 @@
 import { InstanceBase, runEntrypoint, SomeCompanionConfigField } from '@companion-module/base'
 import { getConfigFields, MilluminConfig } from './config'
 import { getActions } from './actions'
-import {FeedbackId, getFeedbacks} from './feedback'
+import { FeedbackId, getFeedbacks } from './feedback'
 import { GetPresetList } from './presets'
 import { initVariables, updateVariables } from './variables'
 import { OSC, OSCResponse } from './osc'
 import { UpgradeV2ToV3 } from './upgrades'
-import {InstanceBaseExt, MediaLayer} from "./utils";
+import { InstanceBaseExt, MediaLayer } from './utils'
 
-class MilluminInstance extends InstanceBase<MilluminConfig> implements InstanceBaseExt<MilluminConfig>{
+class MilluminInstance extends InstanceBase<MilluminConfig> implements InstanceBaseExt<MilluminConfig> {
 	public config: MilluminConfig = {
 		label: '',
 		host: '',
@@ -58,11 +58,11 @@ class MilluminInstance extends InstanceBase<MilluminConfig> implements InstanceB
 
 	public updateInstance(): void {
 		this.mediaLayers = {
-			'firstByIndex': {
+			firstByIndex: {
 				elapsedTime: 0,
 				duration: 0,
 				mediaIndex: 0,
-			}
+			},
 		}
 		if (this.config.timeLayerName !== '') {
 			if (this.config.trackMultipleLayers) {
@@ -141,13 +141,11 @@ class MilluminInstance extends InstanceBase<MilluminConfig> implements InstanceB
 		}
 	}
 
-	public updateMediaLayer(address: string, layerName: string, args: { type: string, value: any }[]) {
-		if (address.endsWith('/media/time')
-			&& 2 <= args.length) {
+	public updateMediaLayer(address: string, layerName: string, args: { type: string; value: any }[]) {
+		if (address.endsWith('/media/time') && 2 <= args.length) {
 			this.mediaLayers[layerName].elapsedTime = args[0].value
 			this.mediaLayers[layerName].duration = args[1].value
-		} else if (address.endsWith('/mediaStarted')
-			&& 1 <= args.length) {
+		} else if (address.endsWith('/mediaStarted') && 1 <= args.length) {
 			this.mediaLayers[layerName].mediaIndex = args[1].value
 			if (3 <= args.length) {
 				this.mediaLayers[layerName].elapsedTime = 0
@@ -156,8 +154,7 @@ class MilluminInstance extends InstanceBase<MilluminConfig> implements InstanceB
 				this.mediaLayers[layerName].elapsedTime = 0
 				this.mediaLayers[layerName].duration = 0
 			}
-		} else if (address.endsWith('/mediaStopped')&&
-			1 <= args.length) {
+		} else if (address.endsWith('/mediaStopped') && 1 <= args.length) {
 			if (this.mediaLayers[layerName].mediaIndex == args[1].value) {
 				this.mediaLayers[layerName].elapsedTime = 0
 				this.mediaLayers[layerName].duration = 0
