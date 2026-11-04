@@ -66,6 +66,6 @@ export const getConfigFields = (): SomeCompanionConfigField[] => {
 			label: 'Enable tracking of multiple layer (comma separated list)',
 			width: 12,
 			default: false,
-		}
+		},
 	]
 }

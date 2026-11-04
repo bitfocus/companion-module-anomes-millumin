@@ -1,20 +1,19 @@
-import {CompanionFeedbackDefinitions, CompanionFeedbackDefinition, DropdownChoice} from '@companion-module/base'
+import { CompanionFeedbackDefinitions, CompanionFeedbackDefinition, DropdownChoice } from '@companion-module/base'
 import { MilluminConfig } from './config'
 import { InstanceBaseExt } from './utils'
-import { combineRgb } from "@companion-module/base";
-import {graphics} from "companion-module-utils";
-import {OptionsBar} from "companion-module-utils/dist/graphics";
+import { combineRgb } from '@companion-module/base'
+import { graphics } from 'companion-module-utils'
+import { OptionsBar } from 'companion-module-utils/dist/graphics'
 
 export enum FeedbackId {
-	PROGRESS_BAR = 'progressBar'
+	PROGRESS_BAR = 'progressBar',
 }
 
-const green = combineRgb(0,255,0);
-const yellow = combineRgb(255,255,0);
+const green = combineRgb(0, 255, 0)
+const yellow = combineRgb(255, 255, 0)
 
-// @ts-ignore
 export function getFeedbacks(instance: InstanceBaseExt<MilluminConfig>): CompanionFeedbackDefinitions {
-	let trackedLayers: DropdownChoice[] = []
+	const trackedLayers: DropdownChoice[] = []
 
 	for (const trackedLayer in instance.mediaLayers) {
 		trackedLayers.push({
@@ -34,7 +33,7 @@ export function getFeedbacks(instance: InstanceBaseExt<MilluminConfig>): Compani
 					type: 'dropdown',
 					choices: trackedLayers,
 					label: 'Layer on media',
-					default: 'Global'
+					default: 'Global',
 				},
 				{
 					id: 'hideWhenNotRunning',
@@ -67,19 +66,29 @@ export function getFeedbacks(instance: InstanceBaseExt<MilluminConfig>): Compani
 				const mediaLayer = instance.mediaLayers[feedback.options.layer!.toString()]
 
 				if (feedback.options.hideWhenNotRunning && mediaLayer.duration === 0) {
-					return {};
+					return {}
 				}
 
-				const isExpiring = (mediaLayer.duration - mediaLayer.elapsedTime) < feedback.options.expiringInSeconds!
-				let colors = [];
+				const isExpiring = mediaLayer.duration - mediaLayer.elapsedTime < feedback.options.expiringInSeconds!
+				let colors = []
 
 				if (isExpiring) {
 					colors = [
-						{ size: 100, color: +feedback.options.expiringColor!, background: +feedback.options.expiringColor!, backgroundOpacity: 64 },
+						{
+							size: 100,
+							color: +feedback.options.expiringColor!,
+							background: +feedback.options.expiringColor!,
+							backgroundOpacity: 64,
+						},
 					]
 				} else {
 					colors = [
-						{ size: 100, color: +feedback.options.runningColor!, background: +feedback.options.runningColor!, backgroundOpacity: 64 },
+						{
+							size: 100,
+							color: +feedback.options.runningColor!,
+							background: +feedback.options.runningColor!,
+							backgroundOpacity: 64,
+						},
 					]
 				}
 
@@ -89,18 +98,18 @@ export function getFeedbacks(instance: InstanceBaseExt<MilluminConfig>): Compani
 					colors: colors,
 					barLength: 62,
 					barWidth: 8,
-					value:  100 - (100 / mediaLayer.duration * mediaLayer.elapsedTime),
+					value: 100 - (100 / mediaLayer.duration) * mediaLayer.elapsedTime,
 					type: 'horizontal',
 					offsetX: 5,
 					offsetY: feedback.image!.height > 58 ? 62 : 48,
-					opacity: 255
+					opacity: 255,
 				}
 
 				return {
-					imageBuffer: graphics.bar(options)
+					imageBuffer: graphics.bar(options),
 				}
-			}
-		}
+			},
+		},
 	}
 	return feedbacks
 }
