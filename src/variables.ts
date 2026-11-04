@@ -1,4 +1,4 @@
-import { CompanionVariableDefinition, CompanionVariableValues } from '@companion-module/base'
+import {CompanionVariableDefinition, CompanionVariableValues} from '@companion-module/base'
 import { MilluminConfig } from './config'
 import { InstanceBaseExt } from './utils'
 
@@ -32,22 +32,10 @@ export function initVariables(instance: InstanceBaseExt<MilluminConfig>): void {
 		{ name: 'Next Column Name', variableId: 'nextColumnName' },
 	])
 	for (const mediaLayerName in instance.mediaLayers) {
-		globalSettings.add({
-			name: `${mediaLayerName} / Time Layer / Elapsed Time`,
-			variableId: `media_${mediaLayerName}_elapsedTime`,
-		})
-		globalSettings.add({
-			name: `${mediaLayerName} / Time Layer / Duration`,
-			variableId: `media_${mediaLayerName}_duration`,
-		})
-		globalSettings.add({
-			name: `${mediaLayerName} / Time Layer / Remaining Time`,
-			variableId: `media_${mediaLayerName}_remainingTime`,
-		})
-		globalSettings.add({
-			name: `${mediaLayerName} / Time Layer / Progress`,
-			variableId: `media_${mediaLayerName}_progress`,
-		})
+		globalSettings.add({ name: `${mediaLayerName} / Time Layer / Elapsed Time`, variableId: `media_${mediaLayerName}_elapsedTime` })
+		globalSettings.add({ name: `${mediaLayerName} / Time Layer / Duration`, variableId: `media_${mediaLayerName}_duration` })
+		globalSettings.add({ name: `${mediaLayerName} / Time Layer / Remaining Time`, variableId: `media_${mediaLayerName}_remainingTime` })
+		globalSettings.add({ name: `${mediaLayerName} / Time Layer / Progress`, variableId: `media_${mediaLayerName}_progress` })
 	}
 	const filteredVariables = [...globalSettings]
 	instance.setVariableDefinitions(filteredVariables)
