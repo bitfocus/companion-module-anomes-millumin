@@ -9,7 +9,7 @@
 	"bugs": "https://github.com/bitfocus/companion-module-anomes-millumin/issues",
 	"maintainers": [
 		{
-			"name": "Per Røine",
+			"name": "Per R\u00f8ine",
 			"email": "per.roine@gmail.com"
 		},
 		{
@@ -29,7 +29,7 @@
 		"millumin"
 	],
 	"runtime": {
-		"type": "node18",
+		"type": "node26",
 		"api": "nodejs-ipc",
 		"apiVersion": "0.0.0",
 		"entrypoint": "../dist/index.js"
