@@ -1,14 +1,18 @@
 import { InstanceBase, runEntrypoint, SomeCompanionConfigField } from '@companion-module/base'
 import { getConfigFields, MilluminConfig } from './config'
 import { getActions } from './actions'
-import {FeedbackId, getFeedbacks} from './feedback'
+import { FeedbackId, getFeedbacks } from './feedback'
 import { GetPresetList } from './presets'
 import { initVariables, updateVariables } from './variables'
 import { OSC, OSCResponse } from './osc'
-import { UpgradeV2ToV3 } from './upgrades'
-import {InstanceBaseExt, MediaLayer} from "./utils";
+import { UpgradeV2ToV3, UpgradeV4ToV5 } from './upgrades'
+import { InstanceBaseExt, sanitizeId } from './utils'
+import { ChangeKind, MilluminState } from './state'
 
-class MilluminInstance extends InstanceBase<MilluminConfig> implements InstanceBaseExt<MilluminConfig>{
+/** Max refresh rate of variables / feedbacks (Millumin may send time feedback at frame rate) */
+const REFRESH_INTERVAL_MS = 50
+
+class MilluminInstance extends InstanceBase<MilluminConfig> implements InstanceBaseExt<MilluminConfig> {
 	public config: MilluminConfig = {
 		label: '',
 		host: '',
@@ -16,17 +20,18 @@ class MilluminInstance extends InstanceBase<MilluminConfig> implements InstanceB
 		rx_port: 0,
 		timeLayerName: '',
 		trackMultipleLayers: false,
+		pingOnConnect: true,
+		autoVariables: true,
+		presetColumns: 16,
 	}
 
 	public OSC: OSC | null = null
-	public currentColumnIndex = 0
-	public currentColumnName: string | null = ''
-	public previousColumnName: string | null = ''
-	public nextColumnName: string | null = ''
-	public mediaLayers: { [id: string]: MediaLayer } = {}
-	public timeLayerElapsedTime = 0
-	public timeLayerDuration = 0
-	public timeLayerMediaIndex = 0
+	public state = new MilluminState()
+
+	private pendingChanges = new Set<ChangeKind>()
+	private refreshTimer: NodeJS.Timeout | null = null
+	private aliveTimer: NodeJS.Timeout | null = null
+	private lastAliveState = false
 
 	constructor(internal: unknown) {
 		super(internal)
@@ -35,10 +40,10 @@ class MilluminInstance extends InstanceBase<MilluminConfig> implements InstanceB
 
 	public async configUpdated(config: MilluminConfig): Promise<void> {
 		this.config = config
-		this.saveConfig(config)
-		this.log('info', 'changing config!')
+		this.log('info', 'Applying Millumin configuration')
 		if (this.OSC) this.OSC.destroy()
-		this.OSC = new OSC(this)
+		this.state.reset()
+		this.OSC = new OSC(this, () => this.onConnected())
 		this.updateInstance()
 	}
 
@@ -48,46 +53,42 @@ class MilluminInstance extends InstanceBase<MilluminConfig> implements InstanceB
 
 	public async init(config: MilluminConfig): Promise<void> {
 		this.log('info', `Welcome, Millumin module is being initialized`)
+		this.aliveTimer = setInterval(() => this.aliveTick(), 1000)
 		await this.configUpdated(config)
 	}
 
-	async destroy() {
+	async destroy(): Promise<void> {
 		this.log('debug', `Instance destroyed: ${this.id}`)
+		if (this.refreshTimer) clearTimeout(this.refreshTimer)
+		if (this.aliveTimer) clearInterval(this.aliveTimer)
 		this.OSC?.destroy()
+		this.OSC = null
+	}
+
+	public trackedLayers(): { id: string; label: string; target: string }[] {
+		const list = [{ id: 'firstByIndex', label: 'index:1', target: 'index:1' }]
+		const raw = (this.config.timeLayerName ?? '').trim()
+		if (raw !== '') {
+			const names = this.config.trackMultipleLayers ? raw.split(',') : [raw]
+			for (const n of names) {
+				const name = n.trim()
+				if (name === '') continue
+				const target =
+					/^(layer|light|index):/i.test(name) || /^selected(layer|light)$/i.test(name) ? name : `layer:${name}`
+				const id = sanitizeId(name)
+				if (!list.some((l) => l.id === id)) list.push({ id, label: name, target })
+			}
+		}
+		return list
 	}
 
 	public updateInstance(): void {
-		this.mediaLayers = {
-			'firstByIndex': {
-				elapsedTime: 0,
-				duration: 0,
-				mediaIndex: 0,
-			}
-		}
-		if (this.config.timeLayerName !== '') {
-			if (this.config.trackMultipleLayers) {
-				const names = this.config.timeLayerName.split(',')
-				for (const name of names) {
-					this.mediaLayers[name] = {
-						elapsedTime: 0,
-						duration: 0,
-						mediaIndex: 0,
-					}
-				}
-			} else {
-				this.mediaLayers[this.config.timeLayerName] = {
-					elapsedTime: 0,
-					duration: 0,
-					mediaIndex: 0,
-				}
-			}
-		}
-		initVariables(this)
+		initVariables(this, true)
 		updateVariables(this)
-
 		this.setActionDefinitions(getActions(this))
 		this.setFeedbackDefinitions(getFeedbacks(this))
-		this.setPresetDefinitions(GetPresetList())
+		this.setPresetDefinitions(GetPresetList(this))
+		this.checkFeedbacks()
 	}
 
 	public initVariables(): void {
@@ -98,75 +99,51 @@ class MilluminInstance extends InstanceBase<MilluminConfig> implements InstanceB
 		updateVariables(this)
 	}
 
-	public receiveOSCResponse(data: OSCResponse): void {
-		if (data.address.toString() == '/millumin/board/launchedColumn' && 0 < data.args.length) {
-			this.currentColumnIndex = data.args[0].value
-			if (1 < data.args.length) {
-				this.currentColumnName = data.args[1].value
-			} else {
-				this.currentColumnName = ''
-			}
-			this.updateVariablesValues()
-		} else if (data.address.toString() == '/millumin/board/stoppedColumn' && 0 < data.args.length) {
-			if (this.currentColumnIndex == data.args[0].value) {
-				this.currentColumnIndex = 0
-				this.currentColumnName = ''
-				this.previousColumnName = ''
-				this.nextColumnName = ''
-				this.updateVariablesValues()
-			}
-		} else if (
-			data.address.toString() == '/millumin/info' &&
-			6 <= data.args.length &&
-			data.args[0].value == 'board/launchedColumn'
-		) {
-			this.previousColumnName = data.args[2].value
-			this.nextColumnName = data.args[4].value
-			this.updateVariablesValues()
-		} else if (data.address.startsWith('/millumin/index:1/media')) {
-			this.updateMediaLayer(data.address, 'firstByIndex', data.args)
-		} else if (data.address.startsWith('/millumin/layer')) {
-			const addressParts = data.address.split('/')
-			const layerName = addressParts[2].split(':', 2)[1]
-
-			if (!this.mediaLayers[layerName]) {
-				this.mediaLayers[layerName] = {
-					mediaIndex: 0,
-					elapsedTime: 0,
-					duration: 0,
-				}
-			}
-
-			this.updateMediaLayer(data.address, layerName, data.args)
-		}
+	private onConnected(): void {
+		if (this.config.pingOnConnect !== false) this.OSC?.sendCommand('/ping', [])
 	}
 
-	public updateMediaLayer(address: string, layerName: string, args: { type: string, value: any }[]) {
-		if (address.endsWith('/media/time')
-			&& 2 <= args.length) {
-			this.mediaLayers[layerName].elapsedTime = args[0].value
-			this.mediaLayers[layerName].duration = args[1].value
-		} else if (address.endsWith('/mediaStarted')
-			&& 1 <= args.length) {
-			this.mediaLayers[layerName].mediaIndex = args[1].value
-			if (3 <= args.length) {
-				this.mediaLayers[layerName].elapsedTime = 0
-				this.mediaLayers[layerName].duration = args[2].value
-			} else {
-				this.mediaLayers[layerName].elapsedTime = 0
-				this.mediaLayers[layerName].duration = 0
-			}
-		} else if (address.endsWith('/mediaStopped')&&
-			1 <= args.length) {
-			if (this.mediaLayers[layerName].mediaIndex == args[1].value) {
-				this.mediaLayers[layerName].elapsedTime = 0
-				this.mediaLayers[layerName].duration = 0
-			}
+	public receiveOSCResponse(data: OSCResponse): void {
+		const result = this.state.handle(data)
+		if (!result.handled) return
+		for (const c of result.changes) this.pendingChanges.add(c)
+		if (!this.lastAliveState) {
+			this.lastAliveState = true
+			this.checkFeedbacks(FeedbackId.FEEDBACK_ALIVE)
 		}
+		this.scheduleRefresh()
+	}
 
-		this.updateVariablesValues()
-		this.checkFeedbacks(FeedbackId.PROGRESS_BAR)
+	private scheduleRefresh(): void {
+		if (this.refreshTimer) return
+		this.refreshTimer = setTimeout(() => {
+			this.refreshTimer = null
+			this.flush()
+		}, REFRESH_INTERVAL_MS)
+	}
+
+	private flush(): void {
+		const changes = this.pendingChanges
+		this.pendingChanges = new Set()
+		if (changes.has('newElement') || changes.has('selection')) initVariables(this)
+		updateVariables(this)
+
+		const ids: FeedbackId[] = []
+		if (changes.has('board')) ids.push(FeedbackId.COLUMN_LAUNCHED)
+		if (changes.has('media')) ids.push(FeedbackId.PROGRESS_BAR, FeedbackId.MEDIA_STATUS, FeedbackId.REMAINING_TIME)
+		if (changes.has('selection') || changes.has('newElement')) ids.push(FeedbackId.ELEMENT_SELECTED)
+		if (changes.has('selection')) ids.push(FeedbackId.MEDIA_STATUS, FeedbackId.PROGRESS_BAR)
+		if (changes.has('element') || changes.has('media') || changes.has('selection'))
+			ids.push(FeedbackId.PROPERTY_COMPARE)
+		if (ids.length > 0) this.checkFeedbacks(...new Set(ids))
+	}
+
+	private aliveTick(): void {
+		const last = this.state.lastMessageTime
+		this.setVariableValues({ lastFeedbackAge: last ? Math.round((Date.now() - last) / 1000) : -1 })
+		this.checkFeedbacks(FeedbackId.FEEDBACK_ALIVE)
+		this.lastAliveState = last > 0 && Date.now() - last < 1000
 	}
 }
 
-runEntrypoint(MilluminInstance, [UpgradeV2ToV3])
+runEntrypoint(MilluminInstance, [UpgradeV2ToV3, UpgradeV4ToV5])

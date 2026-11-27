@@ -1,6 +1,6 @@
 {
 	"name": "anomes-millumin",
-	"version": "4.0.0",
+	"version": "4.1.0",
 	"main": "dist/index.js",
 	"repository": {
 		"type": "git",
@@ -13,7 +13,8 @@
 		"build:main": "tsc -p tsconfig.build.json",
 		"build:watch": "tsc -p tsconfig.build.json --watch",
 		"lint:raw": "eslint",
-		"lint": "yarn lint:raw ."
+		"lint": "yarn lint:raw .",
+		"test": "yarn build && node test/sim.js && node test/udp.js"
 	},
 	"license": "MIT",
 	"prettier": "@companion-module/tools/.prettierrc.json",

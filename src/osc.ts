@@ -18,13 +18,22 @@ export class OSC {
 	private oscRXPort = 8000
 	private udpPort: any
 
-	constructor(instance: InstanceBaseExt<MilluminConfig>) {
+	private readonly onReady?: () => void
+
+	constructor(instance: InstanceBaseExt<MilluminConfig>, onReady?: () => void) {
 		this.instance = instance
+		this.onReady = onReady
 		this.Connect()
 	}
 
 	public readonly destroy = (): void => {
-		if (this.udpPort) this.udpPort.close()
+		if (this.udpPort) {
+			try {
+				this.udpPort.close()
+			} catch (_e) {
+				// already closed
+			}
+		}
 		return
 	}
 
@@ -51,6 +60,9 @@ export class OSC {
 		this.udpPort.on('error', (err: { code: string; message: string }) => {
 			if (err.code === 'EADDRINUSE') {
 				this.instance.log('error', 'Error: Selected port in use.' + err.message)
+				this.instance.updateStatus(InstanceStatus.ConnectionFailure, `Receive port ${this.oscRXPort} in use`)
+			} else {
+				this.instance.log('warn', `OSC error: ${err.message}`)
 			}
 		})
 
@@ -61,6 +73,7 @@ export class OSC {
 		this.udpPort.on('ready', () => {
 			this.instance.log('info', `Listening to Millumin on port: ${this.oscRXPort}`)
 			this.instance.updateStatus(InstanceStatus.Ok)
+			if (this.onReady) this.onReady()
 		})
 
 		return
@@ -72,13 +85,17 @@ export class OSC {
 
 	public readonly sendCommand = (path: string, args?: OSCSomeArguments): void => {
 		// this.instance.log('debug', `sending ${JSON.stringify(path)} ${args ? JSON.stringify(args) : ''}`)
-		this.udpPort.send(
-			{
-				address: path,
-				args: args ? args : [],
-			},
-			this.oscHost,
-			this.oscTXPort,
-		)
+		try {
+			this.udpPort.send(
+				{
+					address: path,
+					args: args ? args : [],
+				},
+				this.oscHost,
+				this.oscTXPort,
+			)
+		} catch (e: any) {
+			this.instance.log('warn', `Could not send ${path}: ${e?.message ?? e}`)
+		}
 	}
 }
