@@ -88,6 +88,8 @@ export class MilluminState {
 	public selectedLayer = ''
 	public selectedLight = ''
 	public selectedIndex = 0
+	/** Index of the selected layer, when known (from a select action or index feedback) */
+	public selectedLayerIndex = 0
 
 	/** Same layer known under two targets (e.g. "layer:video" <-> "index:2"), learnt from selection feedback */
 	public aliases = new Map<string, string>()
@@ -111,6 +113,7 @@ export class MilluminState {
 		this.selectedLayer = ''
 		this.selectedLight = ''
 		this.selectedIndex = 0
+		this.selectedLayerIndex = 0
 		this.lastMessageTime = 0
 		this.messageCount = 0
 	}
@@ -126,8 +129,10 @@ export class MilluminState {
 	public getElement(target: string): ElementState | undefined {
 		const key = targetKey(target)
 		if (key === '') return undefined
-		if (key === 'selectedlayer' && this.selectedLayer) {
-			const el = this.elements.get(`layer:${this.selectedLayer.toLowerCase()}`)
+		if (key === 'selectedlayer') {
+			const el =
+				(this.selectedLayer ? this.elements.get(`layer:${this.selectedLayer.toLowerCase()}`) : undefined) ??
+				(this.selectedLayerIndex ? this.elements.get(`index:${this.selectedLayerIndex}`) : undefined)
 			if (el) return el
 		}
 		if (key === 'selectedlight' && this.selectedLight) {
@@ -222,6 +227,7 @@ export class MilluminState {
 		let target = parts[0]
 		const lowerTarget = target.toLowerCase()
 		if (lowerTarget === 'selectedlayer' && this.selectedLayer) target = `layer:${this.selectedLayer}`
+		else if (lowerTarget === 'selectedlayer' && this.selectedLayerIndex) target = `index:${this.selectedLayerIndex}`
 		else if (lowerTarget === 'selectedlight' && this.selectedLight) target = `light:${this.selectedLight}`
 		const path = parts.slice(1).join('/').toLowerCase()
 		if (path === '') return result
@@ -384,7 +390,10 @@ export class MilluminState {
 			else this.lastIndexSelection = { key: el.key, time: now }
 			const a = this.lastLayerSelection
 			const b = this.lastIndexSelection
-			if (a.key && b.key && Math.abs(a.time - b.time) < 250) this.linkAliases(a.key, b.key)
+			if (a.key && b.key && Math.abs(a.time - b.time) < 250) {
+				this.linkAliases(a.key, b.key)
+				this.selectedLayerIndex = num(b.key.substring('index:'.length))
+			}
 		}
 		if (el.kind === 'layer' || el.kind === 'light' || el.kind === 'index') {
 			if (selected) {
@@ -501,5 +510,33 @@ export class MilluminState {
 			changed = true
 		}
 		return changed
+	}
+
+	/** A select action was sent: Millumin sends no feedback if the element was already selected */
+	public localSelect(kind: 'layer' | 'light', by: 'index' | 'name', value: string | number): void {
+		if (kind === 'layer') {
+			if (by === 'index') {
+				const n = Math.round(Number(value))
+				this.selectedLayerIndex = n
+				this.selectedIndex = n
+				// Name of that layer, if known through an alias
+				const aliasKey = this.aliases.get(`index:${n}`)
+				this.selectedLayer = aliasKey ? (this.elements.get(aliasKey)?.name ?? '') : ''
+			} else {
+				this.selectedLayer = String(value)
+				const aliasKey = this.aliases.get(`layer:${String(value).toLowerCase()}`)
+				this.selectedLayerIndex = aliasKey ? num(aliasKey.substring('index:'.length)) : 0
+			}
+			for (const el of this.elements.values()) {
+				if (el.kind === 'layer') el.selected = el.name.toLowerCase() === this.selectedLayer.toLowerCase()
+				if (el.kind === 'index') el.selected = num(el.name) === this.selectedLayerIndex
+			}
+		} else {
+			if (by === 'name') this.selectedLight = String(value)
+			else this.selectedIndex = Math.round(Number(value))
+			for (const el of this.elements.values()) {
+				if (el.kind === 'light') el.selected = by === 'name' && el.name.toLowerCase() === String(value).toLowerCase()
+			}
+		}
 	}
 }

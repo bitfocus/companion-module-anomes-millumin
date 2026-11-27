@@ -183,6 +183,24 @@ export function getActions(instance: InstanceBaseExt<MilluminConfig>): Companion
 		callback: async (action, ctx) => send(path, [s(await parseText(ctx, action.options.name))]),
 	})
 
+	const select = (name: string, kind: 'layer' | 'light', by: 'index' | 'name'): CompanionActionDefinition => ({
+		name,
+		options: [by === 'index' ? options.index : options.name],
+		callback: async (action, ctx) => {
+			const path = kind === 'layer' ? '/action/selectLayer' : '/action/selectLight'
+			if (by === 'index') {
+				const n = Number(action.options.index)
+				send(path, [i(n)])
+				instance.state.localSelect(kind, by, n)
+			} else {
+				const n = await parseText(ctx, action.options.name)
+				send(path, [s(n)])
+				instance.state.localSelect(kind, by, n)
+			}
+			after()
+		},
+	})
+
 	/** Resolve target, log and return null if invalid */
 	const target = async (action: CompanionActionEvent, ctx: CompanionActionContext): Promise<string | null> => {
 		const t = await resolveTarget(ctx, action.options)
@@ -282,10 +300,10 @@ export function getActions(instance: InstanceBaseExt<MilluminConfig>): Companion
 		/* ---------------- Selection ---------------- */
 		[ActionId.SELECT_BOARD_BY_INDEX]: byIndex('Select / Board by Index', '/action/selectBoard'),
 		[ActionId.SELECT_BOARD_BY_NAME]: byName('Select / Board by Name', '/action/selectBoard'),
-		[ActionId.SELECT_LAYER_BY_INDEX]: byIndex('Select / Layer by Index', '/action/selectLayer'),
-		[ActionId.SELECT_LAYER_BY_NAME]: byName('Select / Layer by Name', '/action/selectLayer'),
-		[ActionId.SELECT_LIGHT_BY_INDEX]: byIndex('Select / Light by Index', '/action/selectLight'),
-		[ActionId.SELECT_LIGHT_BY_NAME]: byName('Select / Light by Name', '/action/selectLight'),
+		[ActionId.SELECT_LAYER_BY_INDEX]: select('Select / Layer by Index', 'layer', 'index'),
+		[ActionId.SELECT_LAYER_BY_NAME]: select('Select / Layer by Name', 'layer', 'name'),
+		[ActionId.SELECT_LIGHT_BY_INDEX]: select('Select / Light by Index', 'light', 'index'),
+		[ActionId.SELECT_LIGHT_BY_NAME]: select('Select / Light by Name', 'light', 'name'),
 
 		/* ---------------- Masters ---------------- */
 		[ActionId.SET_MASTER_VIDEO]: {

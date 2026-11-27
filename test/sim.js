@@ -263,6 +263,14 @@ const T = (o) => ({ targetType: 'selectedLayer', targetName: '', targetIndex: '1
   msg('/millumin/selectedLayer/opacity', 0.4)
   assert.strictEqual(state.getProperty(state.getElement('index:1'), 'opacity'), 0.4, '/? answer applied to alias')
   config.requeryAfterCommand = false
+  // Layer already selected in Millumin: no selection feedback, the select action sets it locally
+  state.reset()
+  msg('/millumin/index:1/mediaStarted', 2, 'a.mov', 60)
+  await run(ActionId.SELECT_LAYER_BY_INDEX, { index: 1 })
+  assert.strictEqual(state.getElement('selectedLayer').key, 'index:1', 'selectedLayer resolved through the index')
+  msg('/millumin/selectedLayer/media/time', 5, 60)
+  assert.strictEqual(state.getElement('index:1').media.time, 5, 'selectedLayer feedback stored on index:1')
+  assert.strictEqual(await fb('mediaStatus', T({ status: 'playing', media: '' })), true)
   console.log('optimistic state / requery / aliases: ok')
 
   // ---------- Upgrade 4 -> 5 ----------
