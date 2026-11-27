@@ -16,6 +16,7 @@ const instance = {
   OSC: { sendCommand: (p, a) => sent.push([p, (a || []).map((x) => `${x.type}:${x.value}`).join(',')]) },
   log: (l, m) => logs.push(`${l}: ${m}`),
   notifyLocalChange: () => {},
+  querySelectedLayer() { state.expectSelectedLayerAnswer('opacity') },
   trackedLayers() {
     const list = [{ id: 'firstByIndex', label: 'index:1', target: 'index:1' }]
     for (const n of config.timeLayerName.split(',')) list.push({ id: n, label: n, target: `layer:${n}` })
@@ -238,6 +239,7 @@ const T = (o) => ({ targetType: 'selectedLayer', targetName: '', targetIndex: '1
   await run(ActionId.LAYER_PAUSE_MEDIA, T({}))
   assert.strictEqual(state.getElement('selectedLayer').media.status, 'paused', 'optimistic pause')
   assert.strictEqual(state.getElement('index:1').media.status, 'paused', 'optimistic pause on alias')
+  await sleep(750) // grace period after a command
   msg('/millumin/selectedLayer/media/time', 3.5, 120)
   assert.strictEqual(state.getElement('selectedLayer').media.status, 'playing', 'moving playhead = playing')
   assert.strictEqual(state.tick(Date.now() + 2000), true)
@@ -271,6 +273,16 @@ const T = (o) => ({ targetType: 'selectedLayer', targetName: '', targetIndex: '1
   msg('/millumin/selectedLayer/media/time', 5, 60)
   assert.strictEqual(state.getElement('index:1').media.time, 5, 'selectedLayer feedback stored on index:1')
   assert.strictEqual(await fb('mediaStatus', T({ status: 'playing', media: '' })), true)
+  // The /? answer comes back with the real layer name: it teaches the selection and links it to the index
+  msg('/millumin/layer:Layer/opacity', 0.4)
+  assert.strictEqual(state.selectedLayer, 'Layer', 'selection learnt from the /? answer')
+  assert.strictEqual(state.aliases.get('layer:layer'), 'index:1')
+  assert.strictEqual(state.getProperty(state.getElement('selectedLayer'), 'opacity'), 0.4)
+  // A pause is not undone by time messages still in flight
+  msg('/millumin/layer:Layer/media/time', 6, 60)
+  await run(ActionId.LAYER_PAUSE_MEDIA, T({}))
+  msg('/millumin/layer:Layer/media/time', 6.1, 60)
+  assert.strictEqual(state.getElement('selectedLayer').media.status, 'paused', 'grace period after pause')
   console.log('optimistic state / requery / aliases: ok')
 
   // ---------- Upgrade 4 -> 5 ----------

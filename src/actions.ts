@@ -161,7 +161,11 @@ export function getActions(instance: InstanceBaseExt<MilluminConfig>): Companion
 	 */
 	const after = (requery?: string): void => {
 		instance.notifyLocalChange()
-		if (requery && instance.config.requeryAfterCommand !== false) setTimeout(() => send(`${requery}/?`), 100)
+		if (requery && instance.config.requeryAfterCommand !== false) {
+			if (requery.toLowerCase().startsWith('/selectedlayer/'))
+				instance.state.expectSelectedLayerAnswer(requery.substring('/selectedLayer/'.length))
+			setTimeout(() => send(`${requery}/?`), 100)
+		}
 	}
 
 	const simple = (name: string, path: string, description?: string): CompanionActionDefinition => ({
@@ -192,6 +196,7 @@ export function getActions(instance: InstanceBaseExt<MilluminConfig>): Companion
 				const n = Number(action.options.index)
 				send(path, [i(n)])
 				instance.state.localSelect(kind, by, n)
+				if (kind === 'layer') instance.querySelectedLayer()
 			} else {
 				const n = await parseText(ctx, action.options.name)
 				send(path, [s(n)])

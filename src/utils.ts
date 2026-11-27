@@ -318,6 +318,8 @@ export interface InstanceBaseExt<TConfig> extends InstanceBase<TConfig> {
 
 	/** The module changed its own state (optimistic update after a command): refresh variables and feedbacks */
 	notifyLocalChange(): void
+	/** Ask Millumin which layer is selected (answer comes back with the real layer name) */
+	querySelectedLayer(): void
 
 	initVariables(): void
 	updateVariablesValues(): void

@@ -102,6 +102,12 @@ class MilluminInstance extends InstanceBase<MilluminConfig> implements InstanceB
 
 	private onConnected(): void {
 		if (this.config.pingOnConnect !== false) this.OSC?.sendCommand('/ping', [])
+		setTimeout(() => this.querySelectedLayer(), 300)
+	}
+
+	public querySelectedLayer(): void {
+		this.state.expectSelectedLayerAnswer('opacity')
+		setTimeout(() => this.OSC?.sendCommand('/selectedLayer/opacity/?', []), 150)
 	}
 
 	public receiveOSCResponse(data: OSCResponse): void {

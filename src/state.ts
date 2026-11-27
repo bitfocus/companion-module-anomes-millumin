@@ -17,6 +17,8 @@ export interface MediaInfo {
 	lastTimeChange: number
 	/** Number of playhead moves seen since the media started (0 = Millumin does not stream the time of this layer) */
 	timeUpdates: number
+	/** Until this time, the playhead does not override a status set by a command */
+	statusLockUntil: number
 }
 
 export interface ElementState {
@@ -54,6 +56,7 @@ function emptyMedia(): MediaInfo {
 		speed: 1,
 		lastTimeChange: 0,
 		timeUpdates: 0,
+		statusLockUntil: 0,
 	}
 }
 
@@ -93,6 +96,7 @@ export class MilluminState {
 
 	/** Same layer known under two targets (e.g. "layer:video" <-> "index:2"), learnt from selection feedback */
 	public aliases = new Map<string, string>()
+	private pendingSelectedQuery = { path: '', time: 0 }
 	private lastLayerSelection = { key: '', time: 0 }
 	private lastIndexSelection = { key: '', time: 0 }
 
@@ -233,6 +237,7 @@ export class MilluminState {
 		if (path === '') return result
 
 		const el = this.ensureElement(target, result)
+		this.learnSelectionFromAnswer(el, path, result)
 		this.applyToElement(el, path, args, result)
 		if (path !== 'selected') {
 			const aliasKey = this.aliases.get(el.key)
@@ -338,7 +343,7 @@ export class MilluminState {
 					m.lastTimeChange = Date.now()
 					m.timeUpdates++
 					// The playhead moves: the media plays (Millumin does not always send mediaStarted, e.g. after an OSC resume)
-					if (m.status !== 'playing' && newTime > m.time) {
+					if (m.status !== 'playing' && newTime > m.time && Date.now() > m.statusLockUntil) {
 						m.status = 'playing'
 						result.changes.add('media')
 					}
@@ -470,6 +475,7 @@ export class MilluminState {
 				m.normalizedTime = 0
 			}
 			m.lastTimeChange = now
+			m.statusLockUntil = now + 700
 		}
 		return els.length > 0
 	}
@@ -538,5 +544,27 @@ export class MilluminState {
 				if (el.kind === 'light') el.selected = by === 'name' && el.name.toLowerCase() === String(value).toLowerCase()
 			}
 		}
+	}
+
+	/**
+	 * The module sent "/selectedLayer/<path>/?". Millumin answers with the real layer name
+	 * ("/millumin/layer:Name/<path>"), which tells which layer is selected.
+	 */
+	public expectSelectedLayerAnswer(path: string): void {
+		this.pendingSelectedQuery = { path: path.toLowerCase(), time: Date.now() }
+	}
+
+	private learnSelectionFromAnswer(el: ElementState, path: string, result: ParseResult): void {
+		const q = this.pendingSelectedQuery
+		if (!q.path || el.kind !== 'layer' || path !== q.path || Date.now() - q.time > 1000) return
+		this.pendingSelectedQuery = { path: '', time: 0 }
+		if (this.selectedLayer.toLowerCase() !== el.name.toLowerCase()) {
+			this.selectedLayer = el.name
+			result.changes.add('selection')
+		}
+		for (const other of this.elements.values()) {
+			if (other.kind === 'layer') other.selected = other === el
+		}
+		if (this.selectedLayerIndex) this.linkAliases(el.key, `index:${this.selectedLayerIndex}`)
 	}
 }
