@@ -1,8 +1,37 @@
-import { CompanionActionDefinition, CompanionActionDefinitions } from '@companion-module/base'
+import {
+	CompanionActionContext,
+	CompanionActionDefinition,
+	CompanionActionDefinitions,
+	CompanionActionEvent,
+	CompanionInputFieldNumber,
+	CompanionInputFieldTextInput,
+	OSCSomeArguments,
+	SomeCompanionActionInputField,
+} from '@companion-module/base'
 import { MilluminConfig } from './config'
-import { InstanceBaseExt, options } from './utils'
+import {
+	ELEMENT_TARGET_CHOICES,
+	InstanceBaseExt,
+	LAYER_TARGET_CHOICES,
+	LIGHT_TARGET_CHOICES,
+	MEDIA_TARGET_CHOICES,
+	f,
+	i,
+	modeField,
+	options,
+	parseArgList,
+	parseNumber,
+	parseText,
+	resolveTarget,
+	s,
+	showWhen,
+	targetFields,
+	timeArg,
+	withMode,
+} from './utils'
 
 export enum ActionId {
+	// Columns
 	LAUNCH_OR_STOP_COLUMN_BY_INDEX = 'Action_LaunchOrStopColumn_ByIndex',
 	LAUNCH_OR_STOP_COLUMN_BY_NAME = 'Action_LaunchOrStopColumn_ByName',
 	LAUNCH_COLUMN_BY_INDEX = 'Action_LaunchColumn_ByIndex',
@@ -10,21 +39,27 @@ export enum ActionId {
 	STOP_COLUMN = 'Action_StopColumn',
 	LAUNCH_PREVIOUS_COLUMN = 'Action_LaunchPreviousColumn',
 	LAUNCH_NEXT_COLUMN = 'Action_LaunchNextColumn',
+	// Transport (dashboard / timeline)
 	PAUSE = 'Action_Pause',
 	PLAY = 'Action_Play',
 	PLAY_OR_PAUSE = 'Action_PlayOrPause',
 	GO_TO_TIME = 'Action_GoToTime',
+	GO_TO_TIMECODE = 'Action_GoToTimecode',
 	JOG_TIME = 'Action_JogTime',
 	GO_TO_TIMELINE_SEGMENT = 'Action_GoToTimelineSegment',
+	// Selection
 	SELECT_BOARD_BY_INDEX = 'Action_SelectBoard_ByIndex',
 	SELECT_BOARD_BY_NAME = 'Action_SelectBoard_ByName',
 	SELECT_LAYER_BY_INDEX = 'Action_SelectLayer_ByIndex',
 	SELECT_LAYER_BY_NAME = 'Action_SelectLayer_ByName',
 	SELECT_LIGHT_BY_INDEX = 'Action_SelectLight_ByIndex',
 	SELECT_LIGHT_BY_NAME = 'Action_SelectLight_ByName',
+	// Masters
 	SET_MASTER_VIDEO = 'Action_SetMasterVideo',
 	SET_MASTER_AUDIO = 'Action_SetMasterAudio',
 	SET_MASTER_DMX = 'Action_SetMasterDMX',
+	// Misc
+	BRUSH = 'Action_Brush',
 	ENTER_FULLSCREEN = 'Action_EnterFullscreen',
 	EXIT_FULLSCREEN = 'Action_ExitFullscreen',
 	DISPLAY_TEST_CARD = 'Action_DisplayTestCard',
@@ -35,375 +70,721 @@ export enum ActionId {
 	SAVE_PROJECT = 'Action_SaveProject',
 	SAVE_PROJECT_AS = 'Action_SaveProjectAs',
 	QUIT = 'Action_Quit',
-	SELECTED_LAYER_RESTART_MEDIA = 'Action_SelectedLayer_RestartMedia',
-	SELECTED_LAYER_START_MEDIA_BY_INDEX = 'Action_SelectedLayer_StartMedia_ByIndex',
-	SELECTED_LAYER_START_MEDIA_BY_NAME = 'Action_SelectedLayer_StartMedia_ByName',
-	SELECTED_LAYER_PAUSE_MEDIA = 'Action_SelectedLayer_PauseMedia',
-	SELECTED_LAYER_PLAY_OR_PAUSE_MEDIA = 'Action_SelectedLayer_PlayOrPauseMedia',
-	SELECTED_LAYER_STOP_MEDIA = 'Action_SelectedLayer_StartOrPauseMedia',
-	SELECTED_LAYER_GO_TO_MEDIA_TIME = 'Action_SelectedLayer_GoToMediaTime',
-	SELECTED_LAYER_GO_TO_NORMALIZED_TIME = 'Action_SelectedLayer_GoToMediaNormalizedTime',
-	SELECTED_LAYER_SET_MEDIA_SPEED = 'Action_SelectedLayer_SetMediaSpeed',
+	PING = 'Action_Ping',
+	// Elements (layers / lights)
+	ELEMENT_OPACITY = 'Element_Opacity',
+	ELEMENT_POSITION = 'Element_Position',
+	ELEMENT_ROTATION = 'Element_Rotation',
+	ELEMENT_SCALE = 'Element_Scale',
+	ELEMENT_MAPPING = 'Element_MappingCorner',
+	ELEMENT_EFFECT = 'Element_EffectParameter',
+	LIGHT_INTENSITY = 'Light_Intensity',
+	ELEMENT_SELECT = 'Element_Select',
+	ELEMENT_PROPERTY = 'Element_CustomProperty',
+	ELEMENT_REQUEST_FEEDBACK = 'Element_RequestFeedback',
+	// Media
+	LAYER_START_MEDIA = 'Layer_StartMedia',
+	LAYER_PAUSE_MEDIA = 'Layer_PauseMedia',
+	LAYER_START_OR_PAUSE_MEDIA = 'Layer_StartOrPauseMedia',
+	LAYER_STOP_MEDIA = 'Layer_StopMedia',
+	MEDIA_TIME = 'Media_Time',
+	MEDIA_JOG = 'Media_JogTime',
+	MEDIA_NORMALIZED_TIME = 'Media_NormalizedTime',
+	MEDIA_SPEED = 'Media_Speed',
+	MEDIA_TEXT = 'Media_Text',
+	MEDIA_QUARTZ_INPUT = 'Media_QuartzInput',
+	// Import
+	LAYER_IMPORT = 'Layer_Import',
+	LAYER_CLEAR_MEDIA = 'Layer_ClearMedia',
+	// Raw
 	CUSTOM_OSC = 'Action_CustomOSC',
 }
 
+/* ------------------------------------------------------------------------ */
+/* Field helpers                                                             */
+/* ------------------------------------------------------------------------ */
+
+function textValue(id: string, label: string, def: string, extra: Partial<CompanionInputFieldTextInput> = {}) {
+	const field: CompanionInputFieldTextInput = {
+		type: 'textinput',
+		id,
+		label,
+		default: def,
+		useVariables: true,
+		...extra,
+	}
+	return field
+}
+
+function masterField(): CompanionInputFieldNumber {
+	return {
+		type: 'number',
+		id: 'value',
+		label: 'Level (0.0 – 1.0)',
+		default: 1,
+		min: 0,
+		max: 1,
+		step: 0.01,
+		range: true,
+	}
+}
+
+const AXIS_CHOICES = [
+	{ id: 'xy', label: 'X and Y' },
+	{ id: 'x', label: 'X only' },
+	{ id: 'y', label: 'Y only' },
+]
+
+const CORNER_CHOICES = [
+	{ id: 'topLeft', label: 'Top left' },
+	{ id: 'topRight', label: 'Top right' },
+	{ id: 'bottomRight', label: 'Bottom right' },
+	{ id: 'bottomLeft', label: 'Bottom left' },
+]
+
+/* ------------------------------------------------------------------------ */
+/* Actions                                                                   */
+/* ------------------------------------------------------------------------ */
+
 export function getActions(instance: InstanceBaseExt<MilluminConfig>): CompanionActionDefinitions {
+	const send = (path: string, args: OSCSomeArguments = []): void => {
+		if (!instance.OSC) {
+			instance.log('warn', `Not connected, cannot send ${path}`)
+			return
+		}
+		instance.OSC.sendCommand(path, args)
+	}
+
+	/**
+	 * Millumin does not send feedback for changes it receives over OSC:
+	 * update the local state, refresh variables/feedbacks, and optionally ask Millumin for the real value (/?).
+	 */
+	const after = (requery?: string): void => {
+		instance.notifyLocalChange()
+		if (requery && instance.config.requeryAfterCommand !== false) {
+			if (requery.toLowerCase().startsWith('/selectedlayer/'))
+				instance.state.expectSelectedLayerAnswer(requery.substring('/selectedLayer/'.length))
+			setTimeout(() => send(`${requery}/?`), 100)
+		}
+	}
+
+	const simple = (name: string, path: string, description?: string): CompanionActionDefinition => ({
+		name,
+		description,
+		options: [],
+		callback: () => send(path),
+	})
+
+	const byIndex = (name: string, path: string): CompanionActionDefinition => ({
+		name,
+		options: [options.index],
+		callback: (action) => send(path, [i(Number(action.options.index))]),
+	})
+
+	const byName = (name: string, path: string, label = 'Name'): CompanionActionDefinition => ({
+		name,
+		options: [{ ...options.name, label }],
+		callback: async (action, ctx) => send(path, [s(await parseText(ctx, action.options.name))]),
+	})
+
+	const select = (name: string, kind: 'layer' | 'light', by: 'index' | 'name'): CompanionActionDefinition => ({
+		name,
+		options: [by === 'index' ? options.index : options.name],
+		callback: async (action, ctx) => {
+			const path = kind === 'layer' ? '/action/selectLayer' : '/action/selectLight'
+			if (by === 'index') {
+				const n = Number(action.options.index)
+				send(path, [i(n)])
+				instance.state.localSelect(kind, by, n)
+				if (kind === 'layer') instance.querySelectedLayer()
+			} else {
+				const n = await parseText(ctx, action.options.name)
+				send(path, [s(n)])
+				instance.state.localSelect(kind, by, n)
+			}
+			after()
+		},
+	})
+
+	/** Resolve target, log and return null if invalid */
+	const target = async (action: CompanionActionEvent, ctx: CompanionActionContext): Promise<string | null> => {
+		const t = await resolveTarget(ctx, action.options)
+		if (t === null) instance.log('warn', `${action.actionId}: invalid target (missing name or index)`)
+		return t
+	}
+
+	/** Base path for media properties: /<layer>/media/<prop> or /<Movie.mov>/<prop> */
+	const mediaPath = (action: CompanionActionEvent, t: string, prop: string): string =>
+		action.options.targetType === 'media' ? `/${t}/${prop}` : `/${t}/media/${prop}`
+
+	/** Generic "number property" action (opacity, rotation, scale, intensity...) */
+	const numberProperty = (
+		name: string,
+		prop: string,
+		choices: { id: string; label: string }[],
+		valueLabel: string,
+		def: string,
+		description?: string,
+	): CompanionActionDefinition => ({
+		name,
+		description,
+		options: [...targetFields(choices, choices[0].id as any), modeField, textValue('value', valueLabel, def)],
+		callback: async (action, ctx) => {
+			const t = await target(action, ctx)
+			const v = await parseNumber(ctx, action.options.value)
+			if (t === null) return
+			if (v === null) return instance.log('warn', `${name}: invalid value`)
+			send(withMode(`/${t}/${prop}`, action.options.mode), [f(v)])
+			if (action.options.mode !== '+' && action.options.mode !== '-') instance.state.localProperty(t, prop, [v])
+			after(`/${t}/${prop}`)
+		},
+	})
+
 	const actions: { [id in ActionId]: CompanionActionDefinition | undefined } = {
-		[ActionId.LAUNCH_OR_STOP_COLUMN_BY_INDEX]: {
-			name: 'Launch or Stop Column by Index',
-			options: [options.index],
-			callback: (action): void => {
-				if (instance.OSC)
-					instance.OSC.sendCommand('/action/launchOrStopColumn', [{ type: 'i', value: action.options.index }])
-			},
-		},
-		[ActionId.LAUNCH_OR_STOP_COLUMN_BY_NAME]: {
-			name: 'Launch or Stop Column by Name',
-			options: [options.name],
-			callback: (action): void => {
-				if (instance.OSC)
-					instance.OSC.sendCommand('/action/launchOrStopColumn', [{ type: 's', value: action.options.name }])
-			},
-		},
-		[ActionId.LAUNCH_COLUMN_BY_INDEX]: {
-			name: 'Launch Column by Index',
-			options: [options.index],
-			callback: (action): void => {
-				if (instance.OSC) instance.OSC.sendCommand('/action/launchColumn', [{ type: 'i', value: action.options.index }])
-			},
-		},
-		[ActionId.LAUNCH_COLUMN_BY_NAME]: {
-			name: 'Launch Column by Name',
-			options: [options.name],
-			callback: (action): void => {
-				if (instance.OSC) instance.OSC.sendCommand('/action/launchColumn', [{ type: 's', value: action.options.name }])
-			},
-		},
-		[ActionId.STOP_COLUMN]: {
-			name: 'Stop Column',
-			options: [],
-			callback: (): void => {
-				if (instance.OSC) instance.OSC.sendCommand('/action/stopColumn', [])
-			},
-		},
-		[ActionId.LAUNCH_PREVIOUS_COLUMN]: {
-			name: 'Launch Previous Column',
-			options: [],
-			callback: (): void => {
-				if (instance.OSC) instance.OSC.sendCommand('/action/launchPreviousColumn', [])
-			},
-		},
-		[ActionId.LAUNCH_NEXT_COLUMN]: {
-			name: 'Launch Next Column',
-			options: [],
-			callback: (): void => {
-				if (instance.OSC) instance.OSC.sendCommand('/action/launchNextColumn', [])
-			},
-		},
-		[ActionId.PAUSE]: {
-			name: 'Pause',
-			options: [],
-			callback: (): void => {
-				if (instance.OSC) instance.OSC.sendCommand('/action/pause', [])
-			},
-		},
-		[ActionId.PLAY]: {
-			name: 'Play',
-			options: [],
-			callback: (): void => {
-				if (instance.OSC) instance.OSC.sendCommand('/action/play', [])
-			},
-		},
-		[ActionId.PLAY_OR_PAUSE]: {
-			name: 'Play or Pause',
-			options: [],
-			callback: (): void => {
-				if (instance.OSC) instance.OSC.sendCommand('/action/playOrPause', [])
-			},
-		},
+		/* ---------------- Columns ---------------- */
+		[ActionId.LAUNCH_OR_STOP_COLUMN_BY_INDEX]: byIndex(
+			'Column / Launch or Stop by Index',
+			'/action/launchOrStopColumn',
+		),
+		[ActionId.LAUNCH_OR_STOP_COLUMN_BY_NAME]: byName('Column / Launch or Stop by Name', '/action/launchOrStopColumn'),
+		[ActionId.LAUNCH_COLUMN_BY_INDEX]: byIndex('Column / Launch by Index', '/action/launchColumn'),
+		[ActionId.LAUNCH_COLUMN_BY_NAME]: byName('Column / Launch by Name', '/action/launchColumn'),
+		[ActionId.STOP_COLUMN]: simple('Column / Stop', '/action/stopColumn'),
+		[ActionId.LAUNCH_PREVIOUS_COLUMN]: simple('Column / Launch Previous', '/action/launchPreviousColumn'),
+		[ActionId.LAUNCH_NEXT_COLUMN]: simple('Column / Launch Next', '/action/launchNextColumn'),
+
+		/* ---------------- Transport ---------------- */
+		[ActionId.PLAY]: simple(
+			'Transport / Play',
+			'/action/play',
+			'Play all media of the dashboard, or the edited timeline',
+		),
+		[ActionId.PAUSE]: simple(
+			'Transport / Pause',
+			'/action/pause',
+			'Pause all media of the dashboard, or the edited timeline',
+		),
+		[ActionId.PLAY_OR_PAUSE]: simple('Transport / Play or Pause', '/action/playOrPause'),
 		[ActionId.GO_TO_TIME]: {
-			name: 'Go to Time',
+			name: 'Transport / Go to Time (seconds)',
+			description: 'Negative value = seconds before the end',
 			options: [options.time],
-			callback: (action): void => {
-				if (instance.OSC) instance.OSC.sendCommand('/action/goToTime', [{ type: 'f', value: action.options.time }])
-			},
+			callback: (action) => send('/action/goToTime', [f(Number(action.options.time))]),
+		},
+		[ActionId.GO_TO_TIMECODE]: {
+			name: 'Transport / Go to Time (timecode or seconds)',
+			description: 'Accepts "01:02:03.456", "10" or "-10" (from the end). Variables allowed.',
+			options: [textValue('time', 'Time', '00:00:00.000')],
+			callback: async (action, ctx) => send('/action/goToTime', [timeArg(await parseText(ctx, action.options.time))]),
 		},
 		[ActionId.JOG_TIME]: {
-			name: 'Jog Time',
-			description: 'This action uses media index:1 elapsed time to calculate an absolute value',
-			options: [options.time],
-			callback: (action): void => {
-				const mediaLayer = instance.mediaLayers['firstByIndex']
-				if (mediaLayer.duration === 0) return;
-				const newTime = mediaLayer.elapsedTime + action.options.time
+			name: 'Transport / Jog Time (relative)',
+			description:
+				'Moves the playhead relatively. Uses the elapsed time reported for the reference layer (default index:1) to compute an absolute time.',
+			options: [
+				options.time,
+				textValue('reference', 'Reference layer (index:1, layer:Name, selectedLayer)', 'index:1'),
+			],
+			callback: async (action, ctx) => {
+				const ref = (await parseText(ctx, action.options.reference ?? 'index:1')) || 'index:1'
+				const el = instance.state.getElement(ref)
+				if (!el || el.media.duration === 0) {
+					instance.log('warn', `Jog Time: no time feedback received for ${ref}`)
+					return
+				}
+				const newTime = Math.min(Math.max(0, el.media.time + Number(action.options.time)), el.media.duration)
+				send('/action/goToTime', [f(newTime)])
+			},
+		},
+		[ActionId.GO_TO_TIMELINE_SEGMENT]: byName(
+			'Transport / Go to Timeline Segment',
+			'/action/goToTimelineSegment',
+			'Segment name',
+		),
 
-				if (instance.OSC) instance.OSC.sendCommand('/action/goToTime', [{ type: 'f', value: newTime }])
-			}
-		},
-		[ActionId.GO_TO_TIMELINE_SEGMENT]: {
-			name: 'Go to Timeline Segment',
-			options: [options.name],
-			callback: (action): void => {
-				if (instance.OSC)
-					instance.OSC.sendCommand('/action/goToTimelineSegment', [{ type: 's', value: action.options.name }])
-			},
-		},
-		[ActionId.SELECT_BOARD_BY_INDEX]: {
-			name: 'Select Board By Index',
-			options: [options.index],
-			callback: (action): void => {
-				if (instance.OSC) instance.OSC.sendCommand('/action/selectBoard', [{ type: 'i', value: action.options.index }])
-			},
-		},
-		[ActionId.SELECT_BOARD_BY_NAME]: {
-			name: 'Select Board By Index',
-			options: [options.name],
-			callback: (action): void => {
-				if (instance.OSC) instance.OSC.sendCommand('/action/selectBoard', [{ type: 's', value: action.options.name }])
-			},
-		},
-		[ActionId.SELECT_LAYER_BY_INDEX]: {
-			name: 'Select Layer By Index',
-			options: [options.index],
-			callback: (action): void => {
-				if (instance.OSC) instance.OSC.sendCommand('/action/selectLayer', [{ type: 'i', value: action.options.index }])
-			},
-		},
-		[ActionId.SELECT_LAYER_BY_NAME]: {
-			name: 'Select Layer By Index',
-			options: [options.name],
-			callback: (action): void => {
-				if (instance.OSC) instance.OSC.sendCommand('/action/selectLayer', [{ type: 's', value: action.options.name }])
-			},
-		},
-		[ActionId.SELECT_LIGHT_BY_INDEX]: {
-			name: 'Select Light By Index',
-			options: [options.index],
-			callback: (action): void => {
-				if (instance.OSC) instance.OSC.sendCommand('/action/selectLight', [{ type: 'i', value: action.options.index }])
-			},
-		},
-		[ActionId.SELECT_LIGHT_BY_NAME]: {
-			name: 'Select Light By Index',
-			options: [options.name],
-			callback: (action): void => {
-				if (instance.OSC) instance.OSC.sendCommand('/action/selectLight', [{ type: 's', value: action.options.name }])
-			},
-		},
+		/* ---------------- Selection ---------------- */
+		[ActionId.SELECT_BOARD_BY_INDEX]: byIndex('Select / Board by Index', '/action/selectBoard'),
+		[ActionId.SELECT_BOARD_BY_NAME]: byName('Select / Board by Name', '/action/selectBoard'),
+		[ActionId.SELECT_LAYER_BY_INDEX]: select('Select / Layer by Index', 'layer', 'index'),
+		[ActionId.SELECT_LAYER_BY_NAME]: select('Select / Layer by Name', 'layer', 'name'),
+		[ActionId.SELECT_LIGHT_BY_INDEX]: select('Select / Light by Index', 'light', 'index'),
+		[ActionId.SELECT_LIGHT_BY_NAME]: select('Select / Light by Name', 'light', 'name'),
+
+		/* ---------------- Masters ---------------- */
 		[ActionId.SET_MASTER_VIDEO]: {
-			name: 'Set Master Video',
-			options: [options.value],
-			callback: (action): void => {
-				if (instance.OSC) instance.OSC.sendCommand('/masterVideo', [{ type: 'f', value: action.options.value }])
-			},
+			name: 'Master / Video',
+			options: [masterField()],
+			callback: (action) => send('/masterVideo', [f(Number(action.options.value))]),
 		},
 		[ActionId.SET_MASTER_AUDIO]: {
-			name: 'Set Master Audio',
-			options: [options.value],
-			callback: (action): void => {
-				if (instance.OSC) instance.OSC.sendCommand('/masterAudio', [{ type: 'f', value: action.options.value }])
-			},
+			name: 'Master / Audio',
+			options: [masterField()],
+			callback: (action) => send('/masterAudio', [f(Number(action.options.value))]),
 		},
 		[ActionId.SET_MASTER_DMX]: {
-			name: 'Set Master MDX',
-			options: [options.value],
-			callback: (action): void => {
-				if (instance.OSC) instance.OSC.sendCommand('/masterDMX', [{ type: 'f', value: action.options.value }])
+			name: 'Master / DMX',
+			options: [masterField()],
+			callback: (action) => send('/masterDMX', [f(Number(action.options.value))]),
+		},
+
+		/* ---------------- Misc ---------------- */
+		[ActionId.BRUSH]: {
+			name: 'Brush / Move brush tool',
+			description: 'Normalized coordinates (0.0 – 1.0)',
+			options: [
+				textValue('x', 'X (0.0 – 1.0)', '0.5'),
+				textValue('y', 'Y (0.0 – 1.0)', '0.5'),
+				textValue('pressure', 'Pressure (0.0 – 1.0, empty = maximum)', ''),
+			],
+			callback: async (action, ctx) => {
+				const x = await parseNumber(ctx, action.options.x)
+				const y = await parseNumber(ctx, action.options.y)
+				const p = await parseNumber(ctx, action.options.pressure)
+				if (x === null || y === null) return instance.log('warn', 'Brush: invalid coordinates')
+				send('/action/brush', p === null ? [f(x), f(y)] : [f(x), f(y), f(p)])
 			},
 		},
-		[ActionId.ENTER_FULLSCREEN]: {
-			name: 'Enter Fullscreen',
-			options: [],
-			callback: (): void => {
-				if (instance.OSC) instance.OSC.sendCommand('/action/enterFullscreen', [])
+		[ActionId.ENTER_FULLSCREEN]: simple('Display / Enter Fullscreen', '/action/enterFullscreen'),
+		[ActionId.EXIT_FULLSCREEN]: simple('Display / Exit Fullscreen', '/action/exitFullscreen'),
+		[ActionId.DISPLAY_TEST_CARD]: simple('Display / Show Test Card', '/action/displayTestCard'),
+		[ActionId.HIDE_TEST_CARD]: simple('Display / Hide Test Card', '/action/hideTestCard'),
+		[ActionId.DISABLE_WORKSPACE]: simple('Display / Disable Workspace', '/action/disableWorkspace'),
+		[ActionId.ENABLE_WORKSPACE]: simple('Display / Enable Workspace', '/action/enableWorkspace'),
+		[ActionId.OPEN_PROJECT]: byName(
+			'Project / Open',
+			'/action/openProject',
+			'Project path (/path/to/project.millumin)',
+		),
+		[ActionId.SAVE_PROJECT]: simple('Project / Save', '/action/saveProject'),
+		[ActionId.SAVE_PROJECT_AS]: byName(
+			'Project / Save As',
+			'/action/saveProject',
+			'Project path (/path/to/project.millumin)',
+		),
+		[ActionId.QUIT]: simple('Project / Quit Millumin', '/action/quit'),
+		[ActionId.PING]: simple(
+			'Feedback / Ping (request full state)',
+			'/ping',
+			'Millumin answers with the state of all the layers',
+		),
+
+		/* ---------------- Elements ---------------- */
+		[ActionId.ELEMENT_OPACITY]: numberProperty(
+			'Layer / Opacity',
+			'opacity',
+			LAYER_TARGET_CHOICES,
+			'Opacity (0.0 – 1.0)',
+			'1',
+		),
+		[ActionId.ELEMENT_POSITION]: {
+			name: 'Layer / Position',
+			options: [
+				...targetFields(LAYER_TARGET_CHOICES),
+				{ type: 'dropdown', id: 'axis', label: 'Axis', default: 'xy', choices: AXIS_CHOICES },
+				modeField,
+				textValue('x', 'X (px)', '0', showWhen('axis', ['xy', 'x'])),
+				textValue('y', 'Y (px)', '0', showWhen('axis', ['xy', 'y'])),
+			],
+			callback: async (action, ctx) => {
+				const t = await target(action, ctx)
+				if (t === null) return
+				const axis = (action.options.axis as string) || 'xy'
+				const x = await parseNumber(ctx, action.options.x)
+				const y = await parseNumber(ctx, action.options.y)
+				const args = []
+				if (axis !== 'y') {
+					if (x === null) return instance.log('warn', 'Position: invalid X')
+					args.push(f(x))
+				}
+				if (axis !== 'x') {
+					if (y === null) return instance.log('warn', 'Position: invalid Y')
+					args.push(f(y))
+				}
+				send(withMode(`/${t}/position/${axis}`, action.options.mode), args)
+				if (action.options.mode !== '+' && action.options.mode !== '-')
+					instance.state.localProperty(
+						t,
+						`position/${axis}`,
+						args.map((a) => a.value),
+					)
+				after(`/${t}/position`)
 			},
 		},
-		[ActionId.EXIT_FULLSCREEN]: {
-			name: 'Exit Fullscreen',
-			options: [],
-			callback: (): void => {
-				if (instance.OSC) instance.OSC.sendCommand('/action/exitFullscreen', [])
+		[ActionId.ELEMENT_ROTATION]: numberProperty(
+			'Layer / Rotation',
+			'rotation',
+			LAYER_TARGET_CHOICES,
+			'Rotation (°)',
+			'0',
+		),
+		[ActionId.ELEMENT_SCALE]: numberProperty('Layer / Scale', 'scale', LAYER_TARGET_CHOICES, 'Scale (1 = 100%)', '1'),
+		[ActionId.ELEMENT_MAPPING]: {
+			name: 'Layer / Mapping Corner',
+			options: [
+				...targetFields(LAYER_TARGET_CHOICES),
+				{ type: 'dropdown', id: 'corner', label: 'Corner', default: 'topLeft', choices: CORNER_CHOICES },
+				{ type: 'dropdown', id: 'axis', label: 'Axis', default: 'xy', choices: AXIS_CHOICES },
+				modeField,
+				textValue('x', 'X (px)', '0', showWhen('axis', ['xy', 'x'])),
+				textValue('y', 'Y (px)', '0', showWhen('axis', ['xy', 'y'])),
+			],
+			callback: async (action, ctx) => {
+				const t = await target(action, ctx)
+				if (t === null) return
+				const axis = (action.options.axis as string) || 'xy'
+				const corner = (action.options.corner as string) || 'topLeft'
+				const x = await parseNumber(ctx, action.options.x)
+				const y = await parseNumber(ctx, action.options.y)
+				const args = []
+				if (axis !== 'y') {
+					if (x === null) return instance.log('warn', 'Mapping: invalid X')
+					args.push(f(x))
+				}
+				if (axis !== 'x') {
+					if (y === null) return instance.log('warn', 'Mapping: invalid Y')
+					args.push(f(y))
+				}
+				const base = `/${t}/mapping/${corner}` + (axis === 'xy' ? '' : `/${axis}`)
+				send(withMode(base, action.options.mode), args)
+				if (action.options.mode !== '+' && action.options.mode !== '-')
+					instance.state.localProperty(
+						t,
+						base.substring(t.length + 2),
+						args.map((a) => a.value),
+					)
+				after(`/${t}/mapping/${corner}`)
 			},
 		},
-		[ActionId.DISPLAY_TEST_CARD]: {
-			name: 'Display TestCard',
-			options: [],
-			callback: (): void => {
-				if (instance.OSC) instance.OSC.sendCommand('/action/displayTestCard', [])
+		[ActionId.ELEMENT_EFFECT]: {
+			name: 'Layer / Effect Parameter',
+			description: 'Change a parameter of an effect, the effect being identified by its position (1 = first effect)',
+			options: [
+				...targetFields(LAYER_TARGET_CHOICES),
+				textValue('effect', 'Effect index (1 = first)', '1'),
+				textValue('parameter', 'Parameter name (e.g. red)', ''),
+				modeField,
+				textValue('value', 'Value', '0'),
+			],
+			callback: async (action, ctx) => {
+				const t = await target(action, ctx)
+				if (t === null) return
+				const effect = await parseNumber(ctx, action.options.effect)
+				const param = (await parseText(ctx, action.options.parameter)).trim()
+				const v = await parseNumber(ctx, action.options.value)
+				if (effect === null || effect < 1 || param === '' || v === null)
+					return instance.log('warn', 'Effect parameter: invalid effect index, parameter or value')
+				const path = `effect${Math.round(effect)}/${param}`
+				send(withMode(`/${t}/${path}`, action.options.mode), [f(v)])
+				if (action.options.mode !== '+' && action.options.mode !== '-') instance.state.localProperty(t, path, [v])
+				after(`/${t}/${path}`)
 			},
 		},
-		[ActionId.HIDE_TEST_CARD]: {
-			name: 'Hide TestCard',
-			options: [],
-			callback: (): void => {
-				if (instance.OSC) instance.OSC.sendCommand('/action/hideTestCard', [])
+		[ActionId.LIGHT_INTENSITY]: numberProperty(
+			'Light / Intensity',
+			'intensity',
+			LIGHT_TARGET_CHOICES,
+			'Intensity (0 – 255)',
+			'255',
+		),
+		[ActionId.ELEMENT_SELECT]: {
+			name: 'Layer / Light / Select or Deselect',
+			description: 'Uses the "selected" property, so it can also deselect',
+			options: [
+				...targetFields(
+					ELEMENT_TARGET_CHOICES.filter((c) => !c.id.startsWith('selected')),
+					'layer',
+				),
+				{
+					type: 'dropdown',
+					id: 'selected',
+					label: 'State',
+					default: 1,
+					choices: [
+						{ id: 1, label: 'Select' },
+						{ id: 0, label: 'Deselect' },
+					],
+				},
+			],
+			callback: async (action, ctx) => {
+				const t = await target(action, ctx)
+				if (t === null) return
+				send(`/${t}/selected`, [i(Number(action.options.selected ?? 1))])
 			},
 		},
-		[ActionId.DISABLE_WORKSPACE]: {
-			name: 'Disable Workspace',
-			options: [],
-			callback: (): void => {
-				if (instance.OSC) instance.OSC.sendCommand('/action/disableWorkspace', [])
+		[ActionId.ELEMENT_PROPERTY]: {
+			name: 'Layer / Light / Any Property',
+			description:
+				'Set any property of an element (e.g. "opacity", "position/x", "mapping/topLeft/y", "effect2/blue", "media/myQuartzInput")',
+			options: [
+				...targetFields(ELEMENT_TARGET_CHOICES),
+				textValue('property', 'Property path', 'opacity'),
+				modeField,
+				textValue('values', 'Value(s), comma separated (types: i:1, f:0.5, s:text)', '1'),
+			],
+			callback: async (action, ctx) => {
+				const t = await target(action, ctx)
+				if (t === null) return
+				const prop = (await parseText(ctx, action.options.property)).trim().replace(/^\/+|\/+$/g, '')
+				if (prop === '') return instance.log('warn', 'Property: empty property path')
+				const args = parseArgList(await parseText(ctx, action.options.values), (m) => instance.log('warn', m))
+				send(withMode(`/${t}/${prop}`, action.options.mode), args)
+				if (action.options.mode !== '+' && action.options.mode !== '-')
+					instance.state.localProperty(
+						t,
+						prop,
+						(args as { value: number | string }[]).map((a) => a.value),
+					)
+				after(`/${t}/${prop}`)
 			},
 		},
-		[ActionId.ENABLE_WORKSPACE]: {
-			name: 'Enable Workspace',
-			options: [],
-			callback: (): void => {
-				if (instance.OSC) instance.OSC.sendCommand('/action/enableWorkspace', [])
-			},
-		},
-		[ActionId.OPEN_PROJECT]: {
-			name: 'Open Project',
-			options: [options.name],
-			callback: (action): void => {
-				if (instance.OSC) instance.OSC.sendCommand('/action/openProject', [{ type: 's', value: action.options.name }])
-			},
-		},
-		[ActionId.SAVE_PROJECT]: {
-			name: 'Save Project',
-			options: [],
-			callback: (): void => {
-				if (instance.OSC) instance.OSC.sendCommand('/action/saveProject', [])
-			},
-		},
-		[ActionId.SAVE_PROJECT_AS]: {
-			name: 'Save Project As',
-			options: [options.name],
-			callback: (action): void => {
-				if (instance.OSC) instance.OSC.sendCommand('/action/saveProject', [{ type: 's', value: action.options.name }])
-			},
-		},
-		[ActionId.QUIT]: {
-			name: 'Quit',
-			options: [],
-			callback: (): void => {
-				if (instance.OSC) instance.OSC.sendCommand('/action/quit', [])
+		[ActionId.ELEMENT_REQUEST_FEEDBACK]: {
+			name: 'Feedback / Request Property (/?)',
+			description: 'Ask Millumin to send the current value of a property (suffix /?)',
+			options: [
+				...targetFields(ELEMENT_TARGET_CHOICES),
+				{
+					type: 'dropdown',
+					id: 'property',
+					label: 'Property',
+					default: 'opacity',
+					allowCustom: true,
+					choices: [
+						{ id: 'opacity', label: 'opacity' },
+						{ id: 'position', label: 'position' },
+						{ id: 'rotation', label: 'rotation' },
+						{ id: 'scale', label: 'scale' },
+						{ id: 'intensity', label: 'intensity' },
+						{ id: 'mapping/topLeft', label: 'mapping/topLeft' },
+						{ id: 'mapping/topRight', label: 'mapping/topRight' },
+						{ id: 'mapping/bottomRight', label: 'mapping/bottomRight' },
+						{ id: 'mapping/bottomLeft', label: 'mapping/bottomLeft' },
+						{ id: 'media/time', label: 'media/time' },
+						{ id: 'media/speed', label: 'media/speed' },
+					],
+				},
+			],
+			callback: async (action, ctx) => {
+				const t = await target(action, ctx)
+				if (t === null) return
+				const prop = String(action.options.property ?? '')
+					.trim()
+					.replace(/^\/+|\/+$/g, '')
+				if (prop === '') return
+				send(`/${t}/${prop}/?`)
 			},
 		},
 
-		[ActionId.SELECTED_LAYER_RESTART_MEDIA]: {
-			name: 'Selected Layer / Restart Media',
-			options: [],
-			callback: (): void => {
-				if (instance.OSC) instance.OSC.sendCommand('/selectedLayer/startMedia', [])
+		/* ---------------- Media ---------------- */
+		[ActionId.LAYER_START_MEDIA]: {
+			name: 'Media / Start (restart, by column or by name)',
+			options: [
+				...targetFields(LAYER_TARGET_CHOICES),
+				{
+					type: 'dropdown',
+					id: 'startMode',
+					label: 'Start',
+					default: 'restart',
+					choices: [
+						{ id: 'restart', label: 'Restart current media' },
+						{ id: 'index', label: 'Media at column index' },
+						{ id: 'name', label: 'Media name or column name' },
+					],
+				},
+				{ ...options.index, label: 'Column index', ...showWhen('startMode', ['index']) },
+				{ ...options.name, label: 'Media or column name', ...showWhen('startMode', ['name']) },
+			],
+			callback: async (action, ctx) => {
+				const t = await target(action, ctx)
+				if (t === null) return
+				const mode = action.options.startMode ?? 'restart'
+				if (mode === 'index') send(`/${t}/startMedia`, [i(Number(action.options.index))])
+				else if (mode === 'name') send(`/${t}/startMedia`, [s(await parseText(ctx, action.options.name))])
+				else send(`/${t}/startMedia`)
+				instance.state.localMediaCommand(t, 'start')
+				after()
 			},
 		},
-		[ActionId.SELECTED_LAYER_START_MEDIA_BY_INDEX]: {
-			name: 'Selected Layer / Start Media by Index',
-			options: [options.index],
-			callback: (action): void => {
-				if (instance.OSC)
-					instance.OSC.sendCommand('/selectedLayer/startMedia', [{ type: 'i', value: action.options.index }])
+		[ActionId.LAYER_PAUSE_MEDIA]: {
+			name: 'Media / Pause',
+			options: targetFields(LAYER_TARGET_CHOICES),
+			callback: async (action, ctx) => {
+				const t = await target(action, ctx)
+				if (t === null) return
+				send(`/${t}/pauseMedia`)
+				instance.state.localMediaCommand(t, 'pause')
+				after()
 			},
 		},
-		[ActionId.SELECTED_LAYER_START_MEDIA_BY_NAME]: {
-			name: 'Selected Layer / Start Media by Name',
-			options: [options.name],
-			callback: (action): void => {
-				if (instance.OSC)
-					instance.OSC.sendCommand('/selectedLayer/startMedia', [{ type: 's', value: action.options.name }])
+		[ActionId.LAYER_START_OR_PAUSE_MEDIA]: {
+			name: 'Media / Start or Pause (toggle)',
+			options: targetFields(LAYER_TARGET_CHOICES),
+			callback: async (action, ctx) => {
+				const t = await target(action, ctx)
+				if (t === null) return
+				send(`/${t}/startOrPauseMedia`)
+				instance.state.localMediaCommand(t, 'toggle')
+				after()
 			},
 		},
-		[ActionId.SELECTED_LAYER_PAUSE_MEDIA]: {
-			name: 'Selected Layer / Pause Media',
-			options: [],
-			callback: (): void => {
-				if (instance.OSC) instance.OSC.sendCommand('/selectedLayer/pauseMedia', [])
+		[ActionId.LAYER_STOP_MEDIA]: {
+			name: 'Media / Stop',
+			options: targetFields(LAYER_TARGET_CHOICES),
+			callback: async (action, ctx) => {
+				const t = await target(action, ctx)
+				if (t === null) return
+				send(`/${t}/stopMedia`)
+				instance.state.localMediaCommand(t, 'stop')
+				after()
 			},
 		},
-		[ActionId.SELECTED_LAYER_PLAY_OR_PAUSE_MEDIA]: {
-			name: 'Selected Layer / Start or Pause Media',
-			options: [],
-			callback: (): void => {
-				if (instance.OSC) instance.OSC.sendCommand('/selectedLayer/startOrPauseMedia', [])
+		[ActionId.MEDIA_TIME]: {
+			name: 'Media / Go to Time',
+			description: 'Seconds ("10") or timecode ("01:02:03.400")',
+			options: [...targetFields(MEDIA_TARGET_CHOICES), textValue('time', 'Time', '0')],
+			callback: async (action, ctx) => {
+				const t = await target(action, ctx)
+				if (t === null) return
+				const arg = timeArg(await parseText(ctx, action.options.time))
+				send(mediaPath(action, t, 'time'), [arg])
+				if (arg.type === 'f' && action.options.targetType !== 'media') {
+					instance.state.localProperty(t, 'media/time', [arg.value])
+					after()
+				}
 			},
 		},
-		[ActionId.SELECTED_LAYER_STOP_MEDIA]: {
-			name: 'Selected Layer / Stop Media',
-			options: [],
-			callback: (): void => {
-				if (instance.OSC) instance.OSC.sendCommand('/selectedLayer/stopMedia', [])
+		[ActionId.MEDIA_JOG]: {
+			name: 'Media / Jog Time (relative)',
+			description:
+				'Moves the media playhead by N seconds. Uses the time feedback when available, otherwise the relative suffix /+ or /-.',
+			options: [...targetFields(MEDIA_TARGET_CHOICES), textValue('offset', 'Offset (seconds, negative = back)', '5')],
+			callback: async (action, ctx) => {
+				const t = await target(action, ctx)
+				const offset = await parseNumber(ctx, action.options.offset)
+				if (t === null) return
+				if (offset === null) return instance.log('warn', 'Media jog: invalid offset')
+				const el = action.options.targetType === 'media' ? undefined : instance.state.getElement(t)
+				if (el && el.media.duration > 0) {
+					const newTime = Math.min(Math.max(0, el.media.time + offset), el.media.duration)
+					send(mediaPath(action, t, 'time'), [f(newTime)])
+				} else {
+					send(mediaPath(action, t, `time/${offset < 0 ? '-' : '+'}`), [f(Math.abs(offset))])
+				}
 			},
 		},
-		[ActionId.SELECTED_LAYER_GO_TO_MEDIA_TIME]: {
-			name: 'Selected Layer / Go to Media Time',
-			options: [options.time],
-			callback: (action): void => {
-				if (instance.OSC)
-					instance.OSC.sendCommand('/selectedLayer/media/time', [{ type: 'f', value: action.options.time }])
+		[ActionId.MEDIA_NORMALIZED_TIME]: {
+			name: 'Media / Go to Normalized Time',
+			description: '0.0 = start, 0.5 = middle, 1.0 = end',
+			options: [...targetFields(MEDIA_TARGET_CHOICES), textValue('value', 'Position (0.0 – 1.0)', '0')],
+			callback: async (action, ctx) => {
+				const t = await target(action, ctx)
+				const v = await parseNumber(ctx, action.options.value)
+				if (t === null) return
+				if (v === null) return instance.log('warn', 'Normalized time: invalid value')
+				send(mediaPath(action, t, 'normalizedTime'), [f(v)])
 			},
 		},
-		[ActionId.SELECTED_LAYER_GO_TO_NORMALIZED_TIME]: {
-			name: 'Selected Layer / Go to Media Normalized Time',
-			options: [options.value],
-			callback: (action): void => {
-				if (instance.OSC)
-					instance.OSC.sendCommand('/selectedLayer/media/normalizedTime', [{ type: 'f', value: action.options.value }])
+		[ActionId.MEDIA_SPEED]: {
+			name: 'Media / Speed',
+			options: [...targetFields(MEDIA_TARGET_CHOICES), modeField, textValue('value', 'Speed (1 = 100%)', '1')],
+			callback: async (action, ctx) => {
+				const t = await target(action, ctx)
+				const v = await parseNumber(ctx, action.options.value)
+				if (t === null) return
+				if (v === null) return instance.log('warn', 'Speed: invalid value')
+				send(withMode(mediaPath(action, t, 'speed'), action.options.mode), [f(v)])
+				if (action.options.targetType !== 'media') {
+					instance.state.localMediaSpeed(t, String(action.options.mode ?? 'set'), v)
+					after()
+				}
 			},
 		},
-		[ActionId.SELECTED_LAYER_SET_MEDIA_SPEED]: {
-			name: 'Selected Layer / Set Media Speed',
-			options: [options.value],
-			callback: (action): void => {
-				if (instance.OSC)
-					instance.OSC.sendCommand('/selectedLayer/media/speed', [{ type: 'f', value: action.options.value }])
+		[ActionId.MEDIA_TEXT]: {
+			name: 'Media / Set Text',
+			description: 'Update the text of a text media',
+			options: [...targetFields(MEDIA_TARGET_CHOICES), textValue('text', 'Text', '', { multiline: true })],
+			callback: async (action, ctx) => {
+				const t = await target(action, ctx)
+				if (t === null) return
+				send(mediaPath(action, t, 'text'), [s(await parseText(ctx, action.options.text))])
 			},
 		},
+		[ActionId.MEDIA_QUARTZ_INPUT]: {
+			name: 'Media / Quartz Composer Input',
+			options: [
+				...targetFields(MEDIA_TARGET_CHOICES),
+				textValue('input', 'Input name', ''),
+				{
+					type: 'dropdown',
+					id: 'valueType',
+					label: 'Value type',
+					default: 'f',
+					choices: [
+						{ id: 'f', label: 'Number (float)' },
+						{ id: 'i', label: 'Integer' },
+						{ id: 's', label: 'Text' },
+					],
+				},
+				textValue('value', 'Value', '0'),
+			],
+			callback: async (action, ctx) => {
+				const t = await target(action, ctx)
+				if (t === null) return
+				const input = (await parseText(ctx, action.options.input)).trim()
+				if (input === '') return instance.log('warn', 'Quartz input: empty input name')
+				const raw = await parseText(ctx, action.options.value)
+				let arg
+				if (action.options.valueType === 's') arg = s(raw)
+				else {
+					const n = Number(raw.replace(',', '.'))
+					if (isNaN(n)) return instance.log('warn', 'Quartz input: invalid number')
+					arg = action.options.valueType === 'i' ? i(n) : f(n)
+				}
+				send(mediaPath(action, t, input), [arg])
+			},
+		},
+
+		/* ---------------- Import ---------------- */
+		[ActionId.LAYER_IMPORT]: {
+			name: 'Import / Import File or Folder',
+			options: [
+				...targetFields(LAYER_TARGET_CHOICES),
+				textValue('path', 'Path to file or folder', ''),
+				textValue('column', 'Column index (empty = current)', ''),
+				{ type: 'checkbox', id: 'start', label: 'Start after import (needs a column)', default: false },
+			],
+			callback: async (action, ctx) => {
+				const t = await target(action, ctx)
+				if (t === null) return
+				const path = await parseText(ctx, action.options.path)
+				const col = await parseNumber(ctx, action.options.column)
+				const args: OSCSomeArguments = col === null ? [s(path)] : [s(path), i(col)]
+				const cmd = action.options.start && col !== null ? 'importAndStart' : 'import'
+				if (action.options.start && col === null)
+					instance.log('warn', 'Import and start needs a column index, imported only')
+				send(`/${t}/${cmd}`, args)
+			},
+		},
+		[ActionId.LAYER_CLEAR_MEDIA]: {
+			name: 'Import / Clear Media',
+			description: 'Remove all media of a layer, or only the one at a column',
+			options: [...targetFields(LAYER_TARGET_CHOICES), textValue('column', 'Column index (empty = all media)', '')],
+			callback: async (action, ctx) => {
+				const t = await target(action, ctx)
+				if (t === null) return
+				const col = await parseNumber(ctx, action.options.column)
+				send(`/${t}/import`, col === null ? [s('')] : [s(''), i(col)])
+			},
+		},
+
+		/* ---------------- Raw ---------------- */
 		[ActionId.CUSTOM_OSC]: {
 			name: 'Send Custom OSC Command',
-			description: 'Send a custom OSC command to Millumin for use with the Interactions panel',
-			options: [options.oscPath, options.oscArgs],
-			callback: (action): void => {
-				if (!instance.OSC) return
-
-				const path = action.options.oscPath as string
-				const argsString = action.options.oscArgs as string
-
-				// Parse the arguments string if provided
-				const args = []
-				if (argsString && argsString.trim() !== '') {
-					const argParts = argsString.split(',')
-					for (const part of argParts) {
-						const trimmed = part.trim()
-						if (trimmed === '') continue
-
-						// Check if the argument has a type prefix (e.g., "i:1", "s:hello", "f:0.5")
-						const colonIndex = trimmed.indexOf(':')
-						if (colonIndex > 0) {
-							const type = trimmed.substring(0, colonIndex).toLowerCase()
-							const valueStr = trimmed.substring(colonIndex + 1)
-
-							if (type === 'i') {
-								// Integer
-								args.push({ type: 'i', value: parseInt(valueStr, 10) })
-							} else if (type === 's') {
-								// String
-								args.push({ type: 's', value: valueStr })
-							} else if (type === 'f') {
-								// Float
-								args.push({ type: 'f', value: parseFloat(valueStr) })
-							} else {
-								instance.log('warn', `Unknown OSC argument type: ${type}`)
-							}
-						} else {
-							// No type prefix, try to infer the type
-							if (!isNaN(Number(trimmed))) {
-								// It's a number
-								if (trimmed.includes('.')) {
-									args.push({ type: 'f', value: parseFloat(trimmed) })
-								} else {
-									args.push({ type: 'i', value: parseInt(trimmed, 10) })
-								}
-							} else {
-								// It's a string
-								args.push({ type: 's', value: trimmed })
-							}
-						}
-					}
-				}
-
-				instance.OSC.sendCommand(path, args)
+			description: 'Send any OSC command to Millumin (e.g. for the Interactions panel)',
+			options: [options.oscPath, options.oscArgs] as SomeCompanionActionInputField[],
+			callback: async (action, ctx) => {
+				const path = await parseText(ctx, action.options.oscPath)
+				const args = parseArgList(await parseText(ctx, action.options.oscArgs), (m) => instance.log('warn', m))
+				send(path, args)
 			},
 		},
 	}
