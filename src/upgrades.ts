@@ -120,6 +120,10 @@ export function UpgradeV4ToV5(
 			config.presetColumns = 16
 			changed = true
 		}
+		if (config.requeryAfterCommand === undefined) {
+			config.requeryAfterCommand = true
+			changed = true
+		}
 		if (config.autoVariables === undefined) {
 			config.autoVariables = true
 			changed = true

@@ -9,6 +9,7 @@ export interface MilluminConfig {
 	trackMultipleLayers: boolean
 	pingOnConnect: boolean
 	autoVariables: boolean
+	requeryAfterCommand: boolean
 	presetColumns: number
 }
 
@@ -62,6 +63,13 @@ export const getConfigFields = (): SomeCompanionConfigField[] => {
 			id: 'autoVariables',
 			label: 'Create variables for every layer/light reported by Millumin',
 			width: 6,
+			default: true,
+		},
+		{
+			type: 'checkbox',
+			id: 'requeryAfterCommand',
+			label: 'Ask Millumin for the new value after each command (Millumin does not echo OSC changes)',
+			width: 12,
 			default: true,
 		},
 		{

@@ -316,6 +316,9 @@ export interface InstanceBaseExt<TConfig> extends InstanceBase<TConfig> {
 	/** Layers for which variables / timer presets are generated: id (variable-safe) -> target ("index:1", "layer:Video") */
 	trackedLayers(): { id: string; label: string; target: string }[]
 
+	/** The module changed its own state (optimistic update after a command): refresh variables and feedbacks */
+	notifyLocalChange(): void
+
 	initVariables(): void
 	updateVariablesValues(): void
 	receiveOSCResponse(data: OSCResponse): void

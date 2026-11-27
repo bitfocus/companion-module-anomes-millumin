@@ -13,6 +13,10 @@ export interface MediaInfo {
 	time: number
 	normalizedTime: number
 	speed: number
+	/** Date.now() of the last time the playhead moved (used to infer playing / paused) */
+	lastTimeChange: number
+	/** Number of playhead moves seen since the media started (0 = Millumin does not stream the time of this layer) */
+	timeUpdates: number
 }
 
 export interface ElementState {
@@ -40,7 +44,17 @@ export interface ParseResult {
 }
 
 function emptyMedia(): MediaInfo {
-	return { status: 'stopped', index: 0, name: '', duration: 0, time: 0, normalizedTime: 0, speed: 1 }
+	return {
+		status: 'stopped',
+		index: 0,
+		name: '',
+		duration: 0,
+		time: 0,
+		normalizedTime: 0,
+		speed: 1,
+		lastTimeChange: 0,
+		timeUpdates: 0,
+	}
 }
 
 function argValue(args: OSCResponse['args'], idx: number): any {
@@ -75,12 +89,18 @@ export class MilluminState {
 	public selectedLight = ''
 	public selectedIndex = 0
 
+	/** Same layer known under two targets (e.g. "layer:video" <-> "index:2"), learnt from selection feedback */
+	public aliases = new Map<string, string>()
+	private lastLayerSelection = { key: '', time: 0 }
+	private lastIndexSelection = { key: '', time: 0 }
+
 	// Connection
 	public lastMessageTime = 0
 	public messageCount = 0
 
 	public reset(): void {
 		this.elements.clear()
+		this.aliases.clear()
 		this.currentColumnIndex = 0
 		this.currentColumnName = ''
 		this.previousColumnName = ''
@@ -208,6 +228,11 @@ export class MilluminState {
 
 		const el = this.ensureElement(target, result)
 		this.applyToElement(el, path, args, result)
+		if (path !== 'selected') {
+			const aliasKey = this.aliases.get(el.key)
+			const alias = aliasKey ? this.elements.get(aliasKey) : undefined
+			if (alias) this.applyToElement(alias, path, args, result)
+		}
 		return result
 	}
 
@@ -272,6 +297,8 @@ export class MilluminState {
 				m.duration = num(argValue(args, 2))
 				m.time = 0
 				m.normalizedTime = 0
+				m.lastTimeChange = Date.now()
+				m.timeUpdates = 0
 				result.changes.add('media')
 				return
 			}
@@ -300,7 +327,17 @@ export class MilluminState {
 				return
 			}
 			case 'media/time': {
-				m.time = num(argValue(args, 0))
+				const newTime = num(argValue(args, 0))
+				if (Math.abs(newTime - m.time) > 0.001) {
+					m.lastTimeChange = Date.now()
+					m.timeUpdates++
+					// The playhead moves: the media plays (Millumin does not always send mediaStarted, e.g. after an OSC resume)
+					if (m.status !== 'playing' && newTime > m.time) {
+						m.status = 'playing'
+						result.changes.add('media')
+					}
+				}
+				m.time = newTime
 				if (args.length > 1) m.duration = num(argValue(args, 1))
 				if (m.duration > 0) m.normalizedTime = m.time / m.duration
 				result.changes.add('media')
@@ -340,6 +377,15 @@ export class MilluminState {
 
 	private applySelection(el: ElementState, selected: boolean, result: ParseResult): void {
 		result.changes.add('selection')
+		if (selected && (el.kind === 'layer' || el.kind === 'index')) {
+			// Millumin sends "layer:Name/selected" and "index:N/selected" together: they are the same layer
+			const now = Date.now()
+			if (el.kind === 'layer') this.lastLayerSelection = { key: el.key, time: now }
+			else this.lastIndexSelection = { key: el.key, time: now }
+			const a = this.lastLayerSelection
+			const b = this.lastIndexSelection
+			if (a.key && b.key && Math.abs(a.time - b.time) < 250) this.linkAliases(a.key, b.key)
+		}
 		if (el.kind === 'layer' || el.kind === 'light' || el.kind === 'index') {
 			if (selected) {
 				for (const other of this.elements.values()) {
@@ -360,5 +406,100 @@ export class MilluminState {
 		} else {
 			el.selected = selected
 		}
+	}
+
+	private linkAliases(layerKey: string, indexKey: string): void {
+		// Remove stale links (layers can be re-ordered)
+		for (const [k, v] of [...this.aliases]) {
+			if (k === layerKey || k === indexKey || v === layerKey || v === indexKey) this.aliases.delete(k)
+		}
+		this.aliases.set(layerKey, indexKey)
+		this.aliases.set(indexKey, layerKey)
+		const a = this.elements.get(layerKey)
+		const b = this.elements.get(indexKey)
+		// Copy the most recent state on the other one
+		if (a && b) {
+			const [src, dst] = a.lastUpdate >= b.lastUpdate ? [a, b] : [b, a]
+			dst.media = { ...src.media }
+			dst.props = { ...dst.props, ...src.props }
+		}
+	}
+
+	/** Element + its alias (if any) */
+	private withAlias(target: string): ElementState[] {
+		const el = this.getElement(target)
+		if (!el) return []
+		const aliasKey = this.aliases.get(el.key)
+		const alias = aliasKey ? this.elements.get(aliasKey) : undefined
+		return alias ? [el, alias] : [el]
+	}
+
+	/* ------------------------------------------------------------------ */
+	/* Local (optimistic) updates                                          */
+	/* Millumin does not echo the changes it receives over OSC, so the     */
+	/* module updates its own state when it sends a command.               */
+	/* ------------------------------------------------------------------ */
+
+	public localMediaCommand(target: string, command: 'start' | 'pause' | 'toggle' | 'stop'): boolean {
+		const els = this.withAlias(target)
+		const now = Date.now()
+		for (const el of els) {
+			const m = el.media
+			if (command === 'start') {
+				m.status = 'playing'
+				m.time = 0
+				m.normalizedTime = 0
+			} else if (command === 'pause') {
+				if (m.status === 'playing') m.status = 'paused'
+			} else if (command === 'toggle') {
+				if (m.status === 'playing') m.status = 'paused'
+				else if (m.duration > 0 || m.name !== '') m.status = 'playing'
+			} else {
+				m.status = 'stopped'
+				m.time = 0
+				m.duration = 0
+				m.normalizedTime = 0
+			}
+			m.lastTimeChange = now
+		}
+		return els.length > 0
+	}
+
+	public localMediaSpeed(target: string, mode: string, value: number): boolean {
+		const els = this.withAlias(target)
+		for (const el of els) {
+			const cur = el.media.speed
+			el.media.speed = mode === '+' ? cur + value : mode === '-' ? cur - value : value
+		}
+		return els.length > 0
+	}
+
+	/** Absolute property set (relative changes are confirmed with a /? request instead) */
+	public localProperty(target: string, path: string, values: Array<number | string>): boolean {
+		const els = this.withAlias(target)
+		const result: ParseResult = { handled: false, changes: new Set(), elements: new Set() }
+		const args = values.map((v) => ({ type: typeof v === 'number' ? 'f' : 's', value: v }))
+		for (const el of els) this.applyToElement(el, path.toLowerCase(), args, result)
+		return els.length > 0
+	}
+
+	/**
+	 * Infer "paused" when the playhead of a playing media stopped moving, and "stopped" at the end of a media.
+	 * Returns true if something changed.
+	 */
+	public tick(now = Date.now(), timeoutMs = 1500): boolean {
+		let changed = false
+		for (const el of this.elements.values()) {
+			const m = el.media
+			if (m.status !== 'playing' || m.lastTimeChange === 0 || m.timeUpdates < 2) continue
+			if (now - m.lastTimeChange < timeoutMs) continue
+			if (m.duration > 0 && m.time >= m.duration - 0.05) {
+				m.status = 'stopped'
+			} else {
+				m.status = 'paused'
+			}
+			changed = true
+		}
+		return changed
 	}
 }

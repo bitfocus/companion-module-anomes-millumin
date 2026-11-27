@@ -155,6 +155,15 @@ export function getActions(instance: InstanceBaseExt<MilluminConfig>): Companion
 		instance.OSC.sendCommand(path, args)
 	}
 
+	/**
+	 * Millumin does not send feedback for changes it receives over OSC:
+	 * update the local state, refresh variables/feedbacks, and optionally ask Millumin for the real value (/?).
+	 */
+	const after = (requery?: string): void => {
+		instance.notifyLocalChange()
+		if (requery && instance.config.requeryAfterCommand !== false) setTimeout(() => send(`${requery}/?`), 100)
+	}
+
 	const simple = (name: string, path: string, description?: string): CompanionActionDefinition => ({
 		name,
 		description,
@@ -203,6 +212,8 @@ export function getActions(instance: InstanceBaseExt<MilluminConfig>): Companion
 			if (t === null) return
 			if (v === null) return instance.log('warn', `${name}: invalid value`)
 			send(withMode(`/${t}/${prop}`, action.options.mode), [f(v)])
+			if (action.options.mode !== '+' && action.options.mode !== '-') instance.state.localProperty(t, prop, [v])
+			after(`/${t}/${prop}`)
 		},
 	})
 
@@ -367,6 +378,13 @@ export function getActions(instance: InstanceBaseExt<MilluminConfig>): Companion
 					args.push(f(y))
 				}
 				send(withMode(`/${t}/position/${axis}`, action.options.mode), args)
+				if (action.options.mode !== '+' && action.options.mode !== '-')
+					instance.state.localProperty(
+						t,
+						`position/${axis}`,
+						args.map((a) => a.value),
+					)
+				after(`/${t}/position`)
 			},
 		},
 		[ActionId.ELEMENT_ROTATION]: numberProperty(
@@ -405,6 +423,13 @@ export function getActions(instance: InstanceBaseExt<MilluminConfig>): Companion
 				}
 				const base = `/${t}/mapping/${corner}` + (axis === 'xy' ? '' : `/${axis}`)
 				send(withMode(base, action.options.mode), args)
+				if (action.options.mode !== '+' && action.options.mode !== '-')
+					instance.state.localProperty(
+						t,
+						base.substring(t.length + 2),
+						args.map((a) => a.value),
+					)
+				after(`/${t}/mapping/${corner}`)
 			},
 		},
 		[ActionId.ELEMENT_EFFECT]: {
@@ -425,7 +450,10 @@ export function getActions(instance: InstanceBaseExt<MilluminConfig>): Companion
 				const v = await parseNumber(ctx, action.options.value)
 				if (effect === null || effect < 1 || param === '' || v === null)
 					return instance.log('warn', 'Effect parameter: invalid effect index, parameter or value')
-				send(withMode(`/${t}/effect${Math.round(effect)}/${param}`, action.options.mode), [f(v)])
+				const path = `effect${Math.round(effect)}/${param}`
+				send(withMode(`/${t}/${path}`, action.options.mode), [f(v)])
+				if (action.options.mode !== '+' && action.options.mode !== '-') instance.state.localProperty(t, path, [v])
+				after(`/${t}/${path}`)
 			},
 		},
 		[ActionId.LIGHT_INTENSITY]: numberProperty(
@@ -477,6 +505,13 @@ export function getActions(instance: InstanceBaseExt<MilluminConfig>): Companion
 				if (prop === '') return instance.log('warn', 'Property: empty property path')
 				const args = parseArgList(await parseText(ctx, action.options.values), (m) => instance.log('warn', m))
 				send(withMode(`/${t}/${prop}`, action.options.mode), args)
+				if (action.options.mode !== '+' && action.options.mode !== '-')
+					instance.state.localProperty(
+						t,
+						prop,
+						(args as { value: number | string }[]).map((a) => a.value),
+					)
+				after(`/${t}/${prop}`)
 			},
 		},
 		[ActionId.ELEMENT_REQUEST_FEEDBACK]: {
@@ -542,6 +577,8 @@ export function getActions(instance: InstanceBaseExt<MilluminConfig>): Companion
 				if (mode === 'index') send(`/${t}/startMedia`, [i(Number(action.options.index))])
 				else if (mode === 'name') send(`/${t}/startMedia`, [s(await parseText(ctx, action.options.name))])
 				else send(`/${t}/startMedia`)
+				instance.state.localMediaCommand(t, 'start')
+				after()
 			},
 		},
 		[ActionId.LAYER_PAUSE_MEDIA]: {
@@ -549,7 +586,10 @@ export function getActions(instance: InstanceBaseExt<MilluminConfig>): Companion
 			options: targetFields(LAYER_TARGET_CHOICES),
 			callback: async (action, ctx) => {
 				const t = await target(action, ctx)
-				if (t !== null) send(`/${t}/pauseMedia`)
+				if (t === null) return
+				send(`/${t}/pauseMedia`)
+				instance.state.localMediaCommand(t, 'pause')
+				after()
 			},
 		},
 		[ActionId.LAYER_START_OR_PAUSE_MEDIA]: {
@@ -557,7 +597,10 @@ export function getActions(instance: InstanceBaseExt<MilluminConfig>): Companion
 			options: targetFields(LAYER_TARGET_CHOICES),
 			callback: async (action, ctx) => {
 				const t = await target(action, ctx)
-				if (t !== null) send(`/${t}/startOrPauseMedia`)
+				if (t === null) return
+				send(`/${t}/startOrPauseMedia`)
+				instance.state.localMediaCommand(t, 'toggle')
+				after()
 			},
 		},
 		[ActionId.LAYER_STOP_MEDIA]: {
@@ -565,7 +608,10 @@ export function getActions(instance: InstanceBaseExt<MilluminConfig>): Companion
 			options: targetFields(LAYER_TARGET_CHOICES),
 			callback: async (action, ctx) => {
 				const t = await target(action, ctx)
-				if (t !== null) send(`/${t}/stopMedia`)
+				if (t === null) return
+				send(`/${t}/stopMedia`)
+				instance.state.localMediaCommand(t, 'stop')
+				after()
 			},
 		},
 		[ActionId.MEDIA_TIME]: {
@@ -575,7 +621,12 @@ export function getActions(instance: InstanceBaseExt<MilluminConfig>): Companion
 			callback: async (action, ctx) => {
 				const t = await target(action, ctx)
 				if (t === null) return
-				send(mediaPath(action, t, 'time'), [timeArg(await parseText(ctx, action.options.time))])
+				const arg = timeArg(await parseText(ctx, action.options.time))
+				send(mediaPath(action, t, 'time'), [arg])
+				if (arg.type === 'f' && action.options.targetType !== 'media') {
+					instance.state.localProperty(t, 'media/time', [arg.value])
+					after()
+				}
 			},
 		},
 		[ActionId.MEDIA_JOG]: {
@@ -618,6 +669,10 @@ export function getActions(instance: InstanceBaseExt<MilluminConfig>): Companion
 				if (t === null) return
 				if (v === null) return instance.log('warn', 'Speed: invalid value')
 				send(withMode(mediaPath(action, t, 'speed'), action.options.mode), [f(v)])
+				if (action.options.targetType !== 'media') {
+					instance.state.localMediaSpeed(t, String(action.options.mode ?? 'set'), v)
+					after()
+				}
 			},
 		},
 		[ActionId.MEDIA_TEXT]: {

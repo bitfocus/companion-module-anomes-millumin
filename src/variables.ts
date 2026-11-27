@@ -36,6 +36,11 @@ function autoElements(instance: InstanceBaseExt<MilluminConfig>): AutoElement[] 
 	return list
 }
 
+const round = (n: number, d = 3): number => {
+	const k = Math.pow(10, d)
+	return Math.round(n * k) / k
+}
+
 function mediaValues(
 	prefix: string,
 	el: ElementState | undefined,
@@ -43,10 +48,10 @@ function mediaValues(
 	legacy: boolean,
 ): void {
 	const m = el?.media
-	const elapsed = m?.time ?? 0
-	const duration = m?.duration ?? 0
-	const remaining = duration > 0 ? Math.max(0, duration - elapsed) : 0
-	const progress = duration > 0 ? elapsed / duration : 0
+	const elapsed = round(m?.time ?? 0, 2)
+	const duration = round(m?.duration ?? 0, 2)
+	const remaining = duration > 0 ? round(Math.max(0, duration - elapsed), 2) : 0
+	const progress = duration > 0 ? round(elapsed / duration, 4) : 0
 	const E = legacy ? 'elapsedTime' : 'elapsed'
 	const R = legacy ? 'remainingTime' : 'remaining'
 	out[`${prefix}_${E}`] = elapsed
@@ -62,7 +67,7 @@ function mediaValues(
 	out[`${prefix}_name`] = m?.name ?? ''
 	out[`${prefix}_index`] = m?.index ?? 0
 	out[`${prefix}_status`] = m?.status ?? 'stopped'
-	out[`${prefix}_speed`] = m?.speed ?? 1
+	out[`${prefix}_speed`] = round(m?.speed ?? 1)
 }
 
 function mediaDefinitions(prefix: string, label: string, legacy: boolean): CompanionVariableDefinition[] {
@@ -90,7 +95,7 @@ function elementValues(state: MilluminState, e: AutoElement, out: CompanionVaria
 	const el = state.getElement(e.target)
 	for (const p of PROPERTY_VARS) {
 		const v = state.getProperty(el, p.prop)
-		out[`${e.id}_${p.prop}`] = v === undefined ? '' : v
+		out[`${e.id}_${p.prop}`] = v === undefined ? '' : typeof v === 'number' ? round(v) : v
 	}
 	out[`${e.id}_selected`] = el?.selected ? 1 : 0
 	mediaValues(`${e.id}_media`, el, out, false)

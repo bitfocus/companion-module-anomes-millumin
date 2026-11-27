@@ -10,11 +10,12 @@ const { UpgradeV4ToV5 } = require(path + '/dist/upgrades')
 const sent = []
 const logs = []
 const state = new MilluminState()
-const config = { timeLayerName: 'Video,Sound', trackMultipleLayers: true, autoVariables: true, presetColumns: 8 }
+const config = { timeLayerName: 'Video,Sound', trackMultipleLayers: true, autoVariables: true, presetColumns: 8, requeryAfterCommand: false }
 const instance = {
   label: 'millumin', config, state,
   OSC: { sendCommand: (p, a) => sent.push([p, (a || []).map((x) => `${x.type}:${x.value}`).join(',')]) },
   log: (l, m) => logs.push(`${l}: ${m}`),
+  notifyLocalChange: () => {},
   trackedLayers() {
     const list = [{ id: 'firstByIndex', label: 'index:1', target: 'index:1' }]
     for (const n of config.timeLayerName.split(',')) list.push({ id: n, label: n, target: `layer:${n}` })
@@ -223,6 +224,46 @@ const T = (o) => ({ targetType: 'selectedLayer', targetName: '', targetIndex: '1
   }
   const cats = [...new Set(Object.values(presets).map((p) => p.category))]
   console.log(`presets: ${n} in ${cats.length} categories: ${cats.join(' | ')}`)
+
+  // ---------- Millumin does not echo OSC changes: local updates, /? requery, aliases, pause inference ----------
+  state.reset()
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
+  msg('/millumin/layer:layer/selected')
+  msg('/millumin/index:1/selected')
+  assert.strictEqual(state.aliases.get('layer:layer'), 'index:1', 'layer <-> index alias learnt')
+  msg('/millumin/index:1/mediaStarted', 2, 'clip.mov', 120)
+  assert.strictEqual(state.getElement('layer:layer').media.name, 'clip.mov', 'alias mirrors media')
+  for (let k = 1; k <= 3; k++) { msg('/millumin/selectedLayer/media/time', k, 120); await sleep(5) }
+  assert.strictEqual(state.getElement('index:1').media.time, 3)
+  await run(ActionId.LAYER_PAUSE_MEDIA, T({}))
+  assert.strictEqual(state.getElement('selectedLayer').media.status, 'paused', 'optimistic pause')
+  assert.strictEqual(state.getElement('index:1').media.status, 'paused', 'optimistic pause on alias')
+  msg('/millumin/selectedLayer/media/time', 3.5, 120)
+  assert.strictEqual(state.getElement('selectedLayer').media.status, 'playing', 'moving playhead = playing')
+  assert.strictEqual(state.tick(Date.now() + 2000), true)
+  assert.strictEqual(state.getElement('selectedLayer').media.status, 'paused', 'frozen playhead = paused')
+  await run(ActionId.LAYER_START_OR_PAUSE_MEDIA, T({}))
+  assert.strictEqual(state.getElement('selectedLayer').media.status, 'playing', 'toggle')
+  await run(ActionId.LAYER_STOP_MEDIA, T({}))
+  assert.strictEqual(state.getElement('selectedLayer').media.status, 'stopped')
+  await run(ActionId.MEDIA_SPEED, T({ mode: 'set', value: '0.5' }))
+  assert.strictEqual(state.getElement('index:1').media.speed, 0.5, 'optimistic speed')
+  await run(ActionId.MEDIA_SPEED, T({ mode: '+', value: '0.25' }))
+  assert.strictEqual(state.getElement('selectedLayer').media.speed, 0.75, 'relative speed')
+  await run(ActionId.ELEMENT_OPACITY, T({ mode: 'set', value: '0.5' }))
+  assert.strictEqual(state.getProperty(state.getElement('index:1'), 'opacity'), 0.5, 'optimistic opacity')
+  await run(ActionId.ELEMENT_POSITION, T({ axis: 'xy', mode: 'set', x: '12', y: '21' }))
+  assert.strictEqual(state.getProperty(state.getElement('selectedLayer'), 'y'), 21, 'optimistic position')
+  config.requeryAfterCommand = true
+  sent.length = 0
+  await actions[ActionId.ELEMENT_OPACITY].callback({ actionId: ActionId.ELEMENT_OPACITY, options: T({ mode: '-', value: '0.1' }) }, ctx)
+  await sleep(200)
+  assert.deepStrictEqual(sent.map((x) => x[0]), ['/selectedLayer/opacity/-', '/selectedLayer/opacity/?'], 'requery after relative change')
+  assert.strictEqual(state.getProperty(state.getElement('index:1'), 'opacity'), 0.5, 'relative change waits for the /? answer')
+  msg('/millumin/selectedLayer/opacity', 0.4)
+  assert.strictEqual(state.getProperty(state.getElement('index:1'), 'opacity'), 0.4, '/? answer applied to alias')
+  config.requeryAfterCommand = false
+  console.log('optimistic state / requery / aliases: ok')
 
   // ---------- Upgrade 4 -> 5 ----------
   const up = UpgradeV4ToV5({}, {

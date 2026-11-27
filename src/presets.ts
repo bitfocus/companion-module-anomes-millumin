@@ -43,7 +43,7 @@ function button(
 		name,
 		style: {
 			text,
-			size: opts.size ?? '14',
+			size: opts.size ?? 'auto',
 			color: opts.color ?? Colors.white,
 			bgcolor: opts.bgcolor ?? Colors.black,
 		},

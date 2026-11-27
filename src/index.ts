@@ -22,6 +22,7 @@ class MilluminInstance extends InstanceBase<MilluminConfig> implements InstanceB
 		trackMultipleLayers: false,
 		pingOnConnect: true,
 		autoVariables: true,
+		requeryAfterCommand: true,
 		presetColumns: 16,
 	}
 
@@ -114,6 +115,11 @@ class MilluminInstance extends InstanceBase<MilluminConfig> implements InstanceB
 		this.scheduleRefresh()
 	}
 
+	public notifyLocalChange(): void {
+		for (const c of ['media', 'element', 'selection'] as ChangeKind[]) this.pendingChanges.add(c)
+		this.scheduleRefresh()
+	}
+
 	private scheduleRefresh(): void {
 		if (this.refreshTimer) return
 		this.refreshTimer = setTimeout(() => {
@@ -139,6 +145,10 @@ class MilluminInstance extends InstanceBase<MilluminConfig> implements InstanceB
 	}
 
 	private aliveTick(): void {
+		if (this.state.tick()) {
+			this.pendingChanges.add('media')
+			this.scheduleRefresh()
+		}
 		const last = this.state.lastMessageTime
 		this.setVariableValues({ lastFeedbackAge: last ? Math.round((Date.now() - last) / 1000) : -1 })
 		this.checkFeedbacks(FeedbackId.FEEDBACK_ALIVE)
